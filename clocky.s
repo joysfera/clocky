@@ -114,7 +114,9 @@ my_kbd	tst.b	d0
 * zde se vyhodnocuj¡ intern¡ hotkeje Clock–
 	move.b	hotshift(PC),d1	jsou povolen‚ intern¡ hotkeje Clock–?
 	beq	.ehc		0 = nepovolen‚
-	cmp.b	(a0),d1		dr‘¡m kombinaci pro hotkey?
+	move.b	(a0),d2
+	and.b	#%01111,d2	zapomen na CapsLock
+	cmp.b	d1,d2		dr‘¡m kombinaci pro hotkey?
 	bne	.ehc
 
 	tst.b	is_megae		Turbo jen pro MegaSTE!
@@ -1800,8 +1802,12 @@ UninstallVectors
 	move.l	d0,a2
 	lea	MOUSE(a2),a0
 	bsr.s	RemoveXBRA	3) odstranit mouse accelerator
+	
 	lea	IKBD(a2),a0
 	bsr.s	RemoveXBRA	4) odstranit keyboard handler
+	
+	lea	-4(a2),a0
+	bsr.s	RemoveXBRA	4.1) undocumented kbd
 
 	lea	_bconout\w,a0
 	bsr.s	RemoveXBRA	5) odstranit printer conversion
@@ -2006,6 +2012,11 @@ konec_video_testu
 	move.l	(a0),(a1)+
 	move.l	a1,(a0)		ikbdsys
 
+	lea	-4(a2),a0		nedokumentov no
+	lea	kbd_jmp(pc),a1
+	move.l	(a0),(a1)+
+	move.l	a1,(a0)		ikbdsys
+
 ****
 	btst	#_HookXBIOS-8,OnBoot
 	beq.s	.ne_xbios
@@ -2151,11 +2162,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.01  2000/06/19 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.10  2000/06/24 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.01  19.06.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.10  24.06.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
