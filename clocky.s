@@ -42,7 +42,7 @@ ALT_LEN	= 32	velikost bloku pro Alt-klavesy
 *
 _InvColor	= 0	invertovat barvy p©i bootu
 _EngSys	= 1	emulovat anglick˜ syst‚m
-_XBSettime= 2	sledovat XBIOS Settime
+_GDSettime= 2	sledovat GEMDOS Tsettime/Tsetdate
 _XBFixY2K	= 3	opravit chybu Y2K v XBIOSov‚m Gettime
 _ResetEHC = 4	smazat EHC tabulku pri restartu AESu
 
@@ -594,7 +594,7 @@ ZvysitCas	tst.l	TIMECOOK
 	add.l	#200,d0
 	move.l	d0,abs_cas	nejd©¡v p©ipravit dal¨¡ sekundu
 	
-	move.l	DATECOOK,a1
+	move.l	DATECOOK,a1	TODO promysli n sleduj¡c¡ k¢d: mo‘n  lze DT_COOK nahradit jen time a date (to u‘ existuje p©ed d_v_t)
 	moveq	#0,d0
 	cmp.w	#0,a1
 	beq.s	.datumne
@@ -607,7 +607,9 @@ ZvysitCas	tst.l	TIMECOOK
 	bsr	Inkrementuj_cas	st le nezmˆnˆno => inkrementuj ru‡nˆ
 	bra.s	.timer3
 .zmena	move.l	d0,DT_COOK
-	bsr	Prepar
+	bsr	Prepar_cas
+	swap	d0
+	bsr	Prepar_datum
 
 .timer3
 * t£tnout jedinˆ pokud sekundy=0 a minuty=0 a t£t n¡ je povoleno
@@ -1380,22 +1382,7 @@ xbios_jmp	dc.l	0
 	beq.s	.nesup
 	addq.l	#2,a0
 .nesup
-	btst	#_XBSettime,OnBoot1
-	beq.s	.xb1
-
-	tst.l	TIMECOOK
-	bne.s	.xb1		pokud je TimeCookie, tak netrap XBIOS
-
-	cmp.w	#22,(a0)		Settime
-	bne.s	.xb1
-; ulo‘ si pr vˆ zmˆnˆn˜ ‡as
-	movem.l	a1-a3/d0-d3,-(sp)
-	move.l	2(a0),d0
-	bsr.s	Prepar
-	movem.l	(sp)+,a1-a3/d0-d3
-	bra.s	.xb_end
-
-.xb1	btst	#_XBFixY2K,OnBoot1
+	btst	#_XBFixY2K,OnBoot1
 	beq.s	.xb_end
 
 	cmp.w	#23,(a0)		Gettime
@@ -1422,51 +1409,99 @@ xbios_Gettime:
 	rts
 
 ***************************************
-GetTime	movem.l	A0-A3/D1-D3,-(sp)
-	move	#$17,-(sp)
-	trap	#14		‡te ‡as z hardwaru (na strojich bez HW hodin (ST) to v preruseni tuhne)
+	dc.l	XBRA,IDENTIFIER
+gemdos_jmp	dc.l	0
+	move.l	usp,a0
+	btst	#5,(sp)
+	beq.s	.nesup
+	lea	6(sp),a0
+	tst.w	_longframe\w
+	beq.s	.nesup
+	addq.l	#2,a0
+.nesup
+	btst	#_GDSettime,OnBoot1
+	beq.s	.end
+
+	cmp.w	#$2d,(a0)		Tsettime
+	bne.s	.tdat
+; ulo‘ si pr vˆ zmˆnˆn˜ ‡as
+	move.w	2(a0),d0
+	bsr.s	Prepar_cas
+	bra.s	.end
+
+.tdat	cmp.w	#$2b,(a0)		Tsetdate
+	bne.s	.end
+; ulo‘ si pr vˆ zmˆnˆn‚ datum
+	move.w	2(a0),d0
+	bsr.s	Prepar_datum
+
+.end	move.l	xbios_jmp,a0
+	jmp	(a0)
+
+***************************************
+StartTime	movem.l	A0-A3/D0-D3,-(sp)	registry zni‡¡ GEMDOS
+
+	move.w	#$2a,-(sp)
+	trap	#1		‡te GEMDOS datum
 	addq.l	#2,sp
-	movem.l	(sp)+,A0-A3/D1-D3
+	bsr.s	Prepar_datum
+	
+	move.w	#$2c,-(sp)
+	trap	#1
+	addq.l	#2,sp
+	bsr.s	Prepar_cas
+	
+	move.l	_hz_200\w,d0	pamatuju si okam‘ik pravdy, odtud budu p©i‡¡tat po sekundˆ
+	add.l	#200,d0
+	move.l	d0,abs_cas
 
-	move.l	_hz_200\w,d1	pamatuju si okam‘ik pravdy, odtud budu p©i‡¡tat po sekundˆ
-	add.l	#200,d1
-	move.l	d1,abs_cas
-
-Prepar	move.l	D0,D1
-	lea	sekundy(PC),A1	p©ekop n¡ ‡asu z XBIOS tvaru do BCD
+	movem.l	(sp)+,A0-A3/D0-D3
+	rts
+***************************************
+Prepar_cas:
+	movem.l	a0/d0-d1,-(sp)
+	move.w	d0,d1
+	lea	sekundy(PC),A0	p©ekop n¡ ‡asu z GEMDOS tvaru do BCD
 	moveq	#$1F,D0
 	and.b	D1,D0
 	lsl.b	#1,D0
-	move.b	D0,(A1) 		sekundy
+	move.b	D0,(A0) 		sekundy
 	lsr.l	#5,D1
 	moveq	#$3F,D0
 	and.b	D1,D0
-	move.b	D0,-(A1)		minuty
+	move.b	D0,-(A0)		minuty
 	lsr.l	#6,D1
 	moveq	#$1F,D0
 	and.b	D1,D0
-	move.b	D0,-(A1)		hodiny
-	lsr.l	#5,D1
-
+	move.b	D0,-(A0)		hodiny
+	movem.l	(sp)+,a0/d0-d1
+	rts
+	
+Prepar_datum:
+	movem.l	a0/d0-d1,-(sp)
 	lea	datum(PC),A0
-	cmp	(A0),d1		zmˆnil se od minul‚ho P©epa©-en¡ datum?
+	cmp.w	(A0),d0		zmˆnil se od minul‚ho P©epa©-en¡ datum?
 	beq.s	.prep_end
-
-	move	d1,(A0)		jo, tak p©epo‡¡tej datum
+	move.w	d0,(A0)		jo, tak si zapamatuj nov˜
+	
+	lea	dny(PC),A0
+	move.w	d0,d1		a p©ekopej
 	moveq	#$1F,D0
 	and.b	D1,D0
-	move.b	D0,-(A1)		dny
+	move.b	D0,-(A0)		dny
 	lsr	#5,D1
 	moveq	#$F,D0
 	and.b	D1,D0
-	move.b	D0,-(A1)		mˆs¡ce
+	move.b	D0,-(A0)		mˆs¡ce
 	lsr	#4,D1
 	and.b	#$7F,D1		jen 7 bit– pro rok
 	add.b	#$50,D1		p©i‡ti 80 k rok–m
-	move.b	D1,-(A1)		roky ulo‘
+	move.b	D1,-(A0)		roky ulo‘
 	
 	bsr.s	denvtydnu
-.prep_end	rts
+.prep_end
+	movem.l	(sp)+,a0/d0-d1
+	rts
 
 ***************************************
 * v˜po‡et dne v t˜dnu
@@ -2014,9 +2049,14 @@ konec_video_testu
 	lea	xbios_jmp(pc),a1
 	move.l	(a0),(a1)+
 	move.l	a1,(a0)		XBIOS
+
+	lea	$84.w,a0
+	lea	gemdos_jmp(pc),a1
+	move.l	(a0),(a1)+
+	move.l	a1,(a0)		XBIOS
 .ne_xbios
 ****
-	bsr	GetTime		u‘ ‡te Y2K opraven˜ ‡as
+	bsr	StartTime		u‘ ‡te Y2K opraven˜ ‡as
 
 	bsr	Sys_Init
 
@@ -2073,7 +2113,7 @@ showpos	dc.w	0		kladn  zprava, z porn  zleva
 showcolb	dc.b	0		barva pozad¡ b¡l 
 showcolf	dc.b	1		barva p¡sma ‡ern 
 *                           v       v
-OnBoot	dc.w	%1111100000000100	follow XBIOS if no DTCOOKIE installed
+OnBoot	dc.w	%1111100000000100	follow GEMDOS time (regardless of DTCOOKIE)
 OnBoot1	= OnBoot+1
 
 refresh	dc.w	REFRESH		ve VBL
@@ -2152,11 +2192,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.01  2000/06/19 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/22 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.01  19.06.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.02  22.11.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
@@ -2225,12 +2265,14 @@ userstack	ds.l	1
 
 datum	ds.w	1
 d_v_t	ds.b	1
-roky	ds.b	1
+
+roky	ds.b	1	tˆchto 6 bajt– mus¡ b˜t p©esnˆ v tomto po©ad¡
 mesice	ds.b	1
 dny	ds.b	1
 hodiny	ds.b	1
 minuty	ds.b	1
 sekundy	ds.b	1
+
 mys_ok	ds.w	1
 adr_oldms	ds.l	1
 zal_hss	ds.w	1
