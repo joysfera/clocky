@@ -104,13 +104,71 @@ zacatek	bra	init
 	dc.l	XBRA,IDENTIFIER
 kbd_jmp	dc.l	0
 
-my_kbd	tst.b	d0
-	bmi	.kbd_rts		pro released key do nothing
-
-	movem.l	a0/d1-d2,-(A7)	first my KBD routine
+my_kbd	movem.l	d0-d1,-(A7)		first my KBD routine
 	
-	move.l	kbshift(PC),a0
-	move.b	(a0),d2
+	move.b	myKbshift,d1	
+	cmpi.b	#$2A,d0		left Shift pressed
+	bne.s	lE0341C
+	bset	#1,d1
+	bra.s	lE034B4
+lE0341C	cmpi.b	#$AA,d0		left Shift released
+	bne.s	lE0342A
+	bclr	#1,d1
+	bra.s	lE034B4
+lE0342A	cmpi.b	#$36,d0		right Shift pressed
+	bne.s	lE03436
+	bset	#0,d1
+	bra.s	lE034B4
+lE03436	cmpi.b	#$B6,d0		right Shift released
+	bne.s	lE03442
+	bclr	#0,d1
+	bra.s	lE034B4
+lE03442	cmpi.b	#$1D,d0		Control pressed
+	bne.s	lE0344E
+	bset	#2,d1
+	bra.s	lE034B4
+lE0344E	cmpi.b	#$9D,d0		Control released
+	bne.s	lE0345A
+	bclr	#2,d1
+	bra.s	lE034B4
+lE0345A	cmpi.b	#$38,d0		Alternate pressed
+	bne.s	lE03466
+	bset	#3,d1
+	bra.s	lE034B4
+lE03466	cmpi.b	#$B8,d0		Alternate released
+	bne.s	lE03494
+	bclr	#3,d1
+lE034B4	move.b	d1,myKbshift	zmenil se stav shiftu, takze znovu otestuj starou klavesu
+
+	move.b	myLastKey(pc),d0	starou klavesu
+	beq.s	kbd_ret
+	bsr.s	CheckHotkeys	znovu otestuj
+	bra.s	kbd_ret	
+
+lE03494	tst.b	d0
+	btst	#7,d0
+	bne.s	.released
+	move.b	d0,myLastKey	uloz pro pristi starou klavesu
+	bsr.s	CheckHotkeys	otestuj
+	beq.s	kbd_ret		neni treba zahodit?
+	clr.b	myLastKey
+	movem.l	(sp)+,d0-d1
+	rts			zahodit klavesu
+	
+.released	bclr	#7,d0
+	cmp.b	myLastKey,d0
+	bne.s	kbd_ret
+	clr.b	myLastKey		zapomen starou klavesu
+
+kbd_ret	movem.l	(sp)+,d0-d1
+	move.l	kbd_jmp(pc),-(sp)	then continue with the original kbd_key handler
+	rts
+
+*************************************************
+CheckHotkeys:
+	movem.l	a0/d1-d2,-(A7)	
+
+	move.b	myKbshift,d2
 	and.b	#%01111,d2	zapomen na CapsLock
 
 * zde se vyhodnocuj¡ intern¡ hotkeje Clock–
@@ -188,18 +246,20 @@ my_kbd	tst.b	d0
 	bne.s	.kbd_ret
 
 	move.b	d0,act_key	zap¡¨u scancode pr vˆ stisknut‚ kl vesy do actual_key
-	move.b	(a0),act_shift	zap¡¨u stav p©e©azova‡–
+	move.b	myKbshift,act_shift	zap¡¨u stav p©e©azova‡–
 
 	btst	#0,(a0,d0)	zkus flag pro PASS_THROUGH
 	bne.s	.kbd_ret
 	bra.s	.vyhodznak	a vyhodim z bufru
+*************************************************
 
 
 .kbd_ret	movem.l	(SP)+,a0/d1-d2
-.kbd_rts	move.l	kbd_jmp(pc),-(sp)	then continue with the original kbd_key handler
+	moveq	#0,d0		Z flag
 	rts
 
 .vyhodznak	movem.l	(SP)+,a0/d1-d2
+	moveq	#-1,d0		Z flag 
 	rts
 
 *************************************************
@@ -2176,11 +2236,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.10beta  2000/06/29 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.11beta  2000/12/10 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.10beta  29.06.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.11beta  10.12.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
@@ -2265,6 +2325,8 @@ YY_sep_za	ds.b	1
 ampm	ds.b	1
 extended_kbd:
 	ds.b	1
+myKbshift	ds.b	1
+myLastKey	ds.b	1
 
 zatutat	ds.w	1	zaporny index od konce tabulky tutani
 tut_wait	ds.w	1	cekani
