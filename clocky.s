@@ -1482,7 +1482,7 @@ Prepar_datum:
 	beq.s	.prep_end
 	move.w	d0,(A0)		jo, tak si zapamatuj nov˜
 	
-	lea	dny(PC),A0
+	lea	hodiny(PC),A0	hodiny = dny+1
 	move.w	d0,d1		a p©ekopej
 	moveq	#$1F,D0
 	and.b	D1,D0
@@ -1811,6 +1811,8 @@ RemoveVBL	move.w	$454.w,d0		1) remove VBL
 ***************************************
 RemoveXBRA
 .loop	move.l	(a0),a1
+	cmp.w	#0,a1		seems like an XBRA is invalid (a1 = 0?)
+	beq.s	.end		since it's being killed at the next instruction with bus error #$FFFFFFF4
 	cmp.l	#XBRA,-12(a1)
 	bne.s	.end		bez XBRA jsem bezmocn˜
 	cmp.l	#IDENTIFIER,-8(a1)
@@ -2197,11 +2199,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/24 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/26 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.02  24.11.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.02  26.11.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
