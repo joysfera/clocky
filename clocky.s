@@ -100,7 +100,10 @@ zacatek	bra	init
 	dc.l	XBRA,IDENTIFIER
 ikbd_jmp	dc.l	0
 
-my_ikbd	bsr	roznout		klavesnice vzdy rozne obraz
+my_ikbd	tst.b	d0
+	bmi	ikbd_rts		pro released key do nothing
+	
+	bsr	roznout		klavesnice vzdy rozne obraz
 
 	movem.l	a0-a2/d1-d4,-(A7)	first my IKBD routine
 	move.l	kbshift(PC),a0
@@ -114,9 +117,9 @@ my_ikbd	bsr	roznout		klavesnice vzdy rozne obraz
 	beq.s	prijety
 
 	lea	128(a1),a1	druh  polovina EHC tabulky
+	move.b	(a0),d1		p©e‡ti KbShift
 	btst	#1,(a1,d0)	zkus flag pro SHIFT_ALLOWED
 	beq.s	.shall
-	move.b	(a0),d1		p©e‡ti KbShift
 	and.b	#%1100,d1		nech jen Alt+Control
 .shall	cmp.b	#%1100,d1		porovnej s Alt+Control
 	bne.s	prijety
@@ -227,7 +230,7 @@ ikbd3	btst	#_KbdAltK-16,_KBD
 	move.b	1(a1,d2),d0	vyt hni z tabulky Alt znak
 ikbd4
 ikbd_ret	movem.l	(SP)+,a0-a2/d1-d4
-	move.l	ikbd_jmp(pc),-(sp)	then continue with original ikbd_key handler
+ikbd_rts	move.l	ikbd_jmp(pc),-(sp)	then continue with original ikbd_key handler
 	rts
 
 vyhodznak	movem.l	(SP)+,a0-a2/d1-d4
@@ -2005,11 +2008,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿  version 3.00beta  2000/05/29 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿  version 3.10beta  2000/05/29 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿  verze 3.00beta  29.05.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿  verze 3.10beta  29.05.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
