@@ -1,0 +1,112 @@
+Zmeny:
+
+7.2.2000:
+- pocet mrtvych kombinaci zvysen z 30 na 40
+- horkych klaves muze byt az 15
+- refresh je editovatelny v Miscellaneous
+- mrtva klavesa pribyla do struktury, takze bude volitelna
+- v popisu jsem posunul bit pro beep
+- kontroluji Yamahu (_SND cookie) a pokud neni, nebipam
+- _IDT cookie opravdu funguje (vsechny tri kombinace) - jeste neni 12/24h
+
+8.2 a pak a‘ 8-9.3.
+- barva zmenena z WORD na LONG a pak zpˆt na 2 x BYTE
+- doplnˆny 24 a 32bit hloubky
+- transparentnost nyn¡ pras cky nep©ekresluje, ale ¨ah  do ulo‘en‚ho bufru
+  (je¨tˆ ov¨em spr vnˆ neindexuje, ale barvu lev‚ho horn¡ho ro‘ku pozad¡ by
+  mˆl nahm tnout dob©e). Mnohem rychlejsi a neblika!
+- 12/24h funguje dle _IDT
+
+12.3.
+- doplneno CR/LF pred vypis
+- opraven nesoulad mezi JCLKCOOK.H a strukturou v SetXBiosTime
+  takze uz bude snad fungovat i bez DTCOOKIE
+
+19.3.
+- uplne prekopan JCLKCOOK.H tak, aby byl znovu kompatibilni se staryma 2.37
+- barvy nejsou nyni nijak kodovany a az Clocky si to preberou do RGB
+- spravne funguji barvy v 8, 15, 16, 24 i 32 bpp (az na male vyjimky)
+- uz je spravne transparentni pozadi ve 24 bpp (protoze jsem posunul
+  hodnoty RGB pri vypisu na RRGGBB00)
+- uz je spravne prepinani Transparent/Overwrite, protoze uz i 1.linku
+  vypisuji pomoci kvalitni rutiny Put_Line
+- !!! zmenil jsem pocet radku pri vypisu malym pismem na 8, takze uz
+  vypisuji i posledni linku maleho fontu - funguje nyni napr. 'y',
+  a taky to lepe vypada v GEMove lajne menu (i kdyz by se jeste jedna nebo
+  dve prazdne linky pridat mohly, aby byla prepsana cela GEMova lajna menu)
+  To jsem zvedav, kde to ted bude vypadat blbe (Guck?, TOS programy?)
+- opraveno obnovovani pozadi (drive obnovovalo vzdy 17 linek - smrt)
+
+24.3.
+- tabulka pro tutani zacinala na lichem bajtu a cetlo se z ni move.w, takze
+  fungovalo pouze na 68020+ (smrt!)
+- alt tabulky maji nyni 3*32 bajtu (max. 15 paru + koncove 0,0)
+
+26.3.
+- pocet horkych klaves Clocku zvysen z 15 na 16 (kvuli sudosti)
+- tabulka bipani na sude adrese, nemelo by uz padat na 68000
+
+29.3.
+- opraveno zvysovani casu
+- vyhozeny pointry ze struktury, bude cela v globalni pameti
+
+2.4.
+- opraven long-standing bug v detekci MegaSTE
+- Alt-klavesy doplneny i pro stroje s TOSem <= 2.06
+- kontroluje CD SCC A
+- opravena chyba "po ¨esti odinstalov n¡ch"
+
+5.4.
+- opravena strasna chyba v XBIOS routine - fungovalo pouze pro 68020+
+- opravena strasna chyba v Y2K fix routine - spatne opsano (ostuda!)
+- konecne Kbshift() i na TOSu 1.0!!! Prvni Clocky pro TOS 1.0! :)
+- AltK prepinac nyni vsude spravne vyhodnocovan
+- Extended klavesnice testovana podle datumu vyroby systemu
+- opravena smrtici chyba v klavesovem preruseni (neprosel k AltK 2x)
+- opravena chyba v AltK driveru - spletl jsem si BTST i AND vysledky (!)
+- opravena chyba v AltK driveru - pouzival jsem spatne klavesnice
+- opravena SMRTICI chyba v keyboard routine - zakazoval jsem vsechna
+  preruseni a zapominal jsem je povolit!
+
+8.4.
+- extended klavesnici nekontroluji podle datumu, ale podle verze TOSu,
+  protoze rok je v opacnem poradi a neda se to tak porovnavat
+
+21.5.
+- ehc_scantable[128] je nyni rozsirena na [2*128] a v druhe polovine
+  jsou definovane flagy PASS_THROUGH (bit 0) a ALLOW_SHIFTS (bit 1)
+  Zaroven CLOCKY zapisuji stav prerazovacu ve chvili, kdy chytly hotkej
+
+14.6.
+- opravena kruta chyba - pri rucnim inkrementovani doslo k poskozeni
+  registru rutinou vypoctu dne v tydnu a tak se zastavilo pocitani i
+  zobrazovani casu. Problemy Honzy Krupky a testy Milana by mely byt
+  timto vyreseny.
+- opravena kruta chyba - pri rucnim inkrementovani se rok 100 prepisoval na
+  rok 00, takze pak nefungoval vypocet dne v tydnu
+- nebudu cekat, az se vypere
+
+15.6.
+- opravena kruta chyba (v souvislosti s chybou SETCLOCKu) - pri
+  prohledavani Alt znakovych tabulek se musim zastavit na prvnim nulovem
+  scancodu => tabulku musim prohledavat zepredu, ne od zadu
+
+19.6.
+- smazu kompletni EHC tabulku pri startu AESu, pokud je to dovoleno
+  konfig bitem _ResetEHC. Delam to proto, ze u ACCecek v podstate neni
+  mozne detekovat restart AESu pri zmene rozliseni
+
+23.11.
+- ‡as se ‡te z GEMDOSu a ne z XBIOSu. Takt‚‘ sledov n¡ zmˆn ‡asu se
+  nyn¡ dˆje p©es GEMDOS. V¨echno kv–li MiNTu a timez¢n m.
+
+TODO:
+- vyresit presouvani do Mxalloc pameti
+- misto pokazde Uninstall navrhuji kontrolovat verzi a pokud je ruzna, tak
+  dat radeji Reinstall. Zaroven dovolit /u pro uninstall a /r pro reinstall
+
+
+BUGS:
+- je spatne GRAY barva v 15-ti bpp a mozna i jine, i kdyz jsem to dvakrat
+  cele kontroloval
+- jsou spatne barvy v 16 a 32 bpp na Milanovi

@@ -1,0 +1,1290 @@
+@author "Petr Stehlik"
+@database "all-in-one utility"
+@subject "Documentation/Utilities"
+@$VER: Clocky.hyp 1.2.1 (20.6.00)
+
+@node main "Clocky 3.01"
+@{B}Clocky¿ 3.01                                                2000/06/20@{b}
+@line 1 70 0 0 1
+
+       What is Clocky? It's a very useful all-in-one multiutility for Atari
+   computers (ST, STe, MegaSTE, TT, Falcon) and clones (Medusa, Hades,
+   Milan). The name might be misleading - after many years of development
+   it's no longer just a plain corner clock. See Features below to discover
+   the many areas Clocky covers today.
+
+   ù @{"What's new" LINK News}
+   ù Features
+   ù Installation
+   ù Configuration
+   ù Compatibility
+   ù External Hotkey Clients
+   ù Technical Background
+   ù Drive Clocky yourself
+   ù @{"History of development" LINK "History"}
+   ù Status
+
+   EnJoy Clocky!
+
+   Petr
+
+   e-mail: joy@sophics.cz
+   WWW     http://joy.sophics.cz/
+
+
+
+@endnode
+
+@pnode "Contact"
+@alias "let me know"
+ e-mail: joy@sophics.cz
+ WWW     http://joy.sophics.cz/
+@endnode
+=====================================================================
+
+@node "News" "Clocky 3.01 - What's new"
+@{B}What's new@{b}
+@line 1 70 0 0 1
+
+ù @{"General differences between Clocky II and III" LINK "News" "General"}
+ù @{"News in 3.01" LINK "News" "Clocky301"}
+
+@label "General"
+@{B} General differences between Clocky II and Clocky III @{b}
+
+   Users familiar with Clocky 2.X might be interested in comparison of
+   Clocky 2.X and this new Clocky 3.01. Besides the obvious enhancements
+   you find when you browse through new SetClock III there are also the
+   following changes in the Clocky internals:
+
+   ù nearly everything is customizable now. Keys, hotkeys, shift
+     combinations, corner clock, screen saver and internal parameters might
+     be finetuned with SetClock III now.
+
+   ù routines for displaying clock on screen were much improved. They now
+     can write to any colour depth (incl. Truecolor) and also to 1, 8, 15,
+     16, 24 and 32-bit colour depths on NOVA, ET-4000 and Milan graphics
+     cards. The routines are also faster, more flexible and the output can
+     be colorful or even transparent.
+
+   ù the beep at every whole hour does not use XBIOS calls anymore. Instead
+     it uses direct PSG programming. The beep sounds same as previously but
+     it doesn't crash the machine now. So it's safe to use it now (I myself
+     do use it for more than four months already without any problem).
+
+   ù External Hotkey Client support was greatly improved. SetClock III now
+     contains a nice editor that can edit external hotkeys for @{"ClockyTools" LINK "EHC" "JCLKTOOL"}.
+     The library for EHC support is up-to-date and available.
+
+   ù Alt keyboard tables were introduced after some initial discussion
+     in MiNT mailing list (where I said it would be hard to implement :-)
+
+   ù Dead keys - the dead key is configurable and the number of dead
+     keys increased from 30 to 40 chars (as requested by Martin-Eric and
+     Lubosh)
+
+   ù DTCOOKIE is not required anymore - Clocky can read time from XBIOS
+     patched call.
+
+   ù and much more I can't remember right now. Just try it out and find
+     it by yourself...
+
+
+@label "Clocky301"
+@{B} News in Clocky 3.01 @{b}
+
+   I managed to slightly update the documentation, especially regarding EHC
+   and @{"ClockyTools" LINK "EHC" "JCLKTOOL"}. Problem with resolution change is described @{"here" LINK "History" "AccessoryProblem"}
+   and the fix is to enable @{"new switch" LINK "D_Miscellaneous" "ResetEHC"} in @{"Miscellaneous dialog" LINK "D_Miscellaneous"}.
+
+   I have also written more informations about the @{"Screen Saver" LINK "D_Saver"} and also
+   the @{"automatic reload of JCLKTOOL.SET" LINK "D_Ehc"}.
+
+@endnode
+
+=====================================================================
+
+@node Compatibility "Clocky 3.01 - Compatibility"
+@{B}Compatibility@{b}
+@line 1 70 0 0 1
+
+   ù @{"General compatibility" LINK "Compatibility" "General compatibility"}
+   ù @{"VideoRAM Access" LINK "Compatibility" "VideoRAM Access"}
+   ù @{"Interrupt Vectors" LINK "Compatibility" "Interrupt Vectors"}
+   ù @{"Screen Saver" LINK "Compatibility" "Screen Saver"}
+   ù @{"Conclusion" LINK "Compatibility" "Conclusion"}
+
+@alabel "General Compatibility"
+@{B}General compatibility@{0}
+
+   I tried hard to make Clocky as much compatible with usual Atari computer
+   systems as possible. It's been tested on many machines and under many
+   different software setups. I believe there's no known conflict with any
+   other application or resident program. This means you can freely install
+   it and become a happy user.
+
+   Clocky has been tested and runs well on all Atari machines from ST up to
+   Falcon030. Clocky also runs on Medusa, Hades and Milan computers
+   (on Milan the keyboard functions do not work yet because Milan doesn't
+   implement ikbdsys vector. This will be addressed in near future).
+
+   Clocky is compatible with TOS (all versions from 1.0 upwards) and also
+   with multitasking systems like MiNT, MultiTOS, Geneva and MagiC.
+
+   Clocky also runs on various Atari ST emulators including Gemulator,
+   TOSBox and STonX.
+
+@alabel "VideoRAM Access"
+@{B}VideoRAM Access@{0}
+
+   Clocky writes directly to Video RAM if the corner clock is enabled. This
+   direct writting isn't possible to replace by VDI output because that is
+   way too slow. Clocky's text output routines work correctly in all Atari
+   ST/TT/Falcon resolutions ranging from monochrome graphics to 16-bit
+   TrueColor, including all extended resolutions.
+   Additional graphics cards are supported - ET4000, Falcon NOVA and also
+   Milan graphics cards with 1, 8, 16, 24 and even 32-bit color depth. It's
+   been tested on these systems and worked perfectly. From what I have
+   heard there might be some issues with multibanking video card by Eclipse
+   but I haven't had chance to test Clocky on Eclipse yet.
+
+@label "Interrupt Vectors"
+@{B}Interrupt Vectors@{0}
+
+   Clocky, as every TSR, hooks on several vectors (VBL, mouse vector,
+   ikbdsys vector, printer bconout etc). It always uses XBRA standard
+   (the ID is 'JCLK') so it can be easily and cleanly uninstalled by other
+   programs, if needed.
+
+   In future versions I am preparing a simple system for turning off
+   various parts of Clocky so it could be used on systems that contain new
+   incompatible hardware or are too far from standard Atari (like MagiCMac
+   etc).
+
+@label "Screen Saver"
+@{B}Screen Saver@{0}
+
+   Clocky doesn't access any hardware registers directly apart from the
+   Screen Saver (because there's no system call for that). The Screen Saver
+   is aware of Atari ST, STacy and Falcon video hardware as well as
+   graphics card Nova Falcon. On these systems it will access the video HW
+   registers, but if and only if you allow it by selecting "Turn off
+   VESA/EPA synchro". Other systems are not affected.
+
+   Similarly, if Modem Carrier Detect watch is enabled the Screen Saver
+   routine reads MFP and/or SCC HW registers (again no system call for
+   this). This should also work correctly especially since Clocky is able
+   to find out if the current machine has MFP (ST, TT) or SCC (MegaSTE,
+   TT, Falcon). On machines without these chips Clocky doesn't read the
+   registers.
+
+   If there was any problem with Screen Saver, you could simply turn off
+   watching the SCC (reading MFP is safe as long as MFP is there - which is
+   true for all machines but Milan) and let me know what's wrong (I don't
+   use a modem anymore so I can't test it as much as I could when I was
+   running Joy BBS back in 1995).
+
+@label "Conclusion"
+@{B}Conclusion@{0}
+
+   All in all, Clocky should work on pretty much any machine with any
+   hardware and software combination possible (as long as it can execute
+   Motorola 68k instructions and has some sort of TOS compatible OS :) If
+   some Clocky functions would cause troubles to you (e.g. the screen saver
+   or the direct video output mentioned above), simply turn them off with
+   SetClock and let me know some details so I could look at that.
+
+@endnode
+
+=====================================================================
+
+@node Features "Clocky 3.01 - Features"
+@{B}Features@{b}
+@line 1 70 0 0 1
+
+
+   ù @{"Characteristics" LINK "Features" "Characteristics"}
+   ù @{"Main Areas of Use" LINK "Features" "Areas"}
+   ù @{"Complete List of Features" LINK "Features" "Offerings"}
+
+
+@label "Characteristics"
+@{B}Characteristics@{b}
+
+  ù Clocky is a very small program (the file size is well under 8 kB since
+    it's written in pure assembler) so even 520ST users might install
+    it without worrying of their free RAM.
+
+  ù Furthermore, when you install Clocky, you can easily remove many other
+    TSRs from your AUTO folder, so you minimize memory consumption and the
+    risk of unwanted collision between the many other AUTO programs that
+    you usually need to set up operating system into usable state.
+
+  ù Clocky is cleanly written and runs on latest hardware with latest
+    multitasking operatnig system with memory protection. At the same time
+    it can run on 15 years old plain TOS 1.0 and greatly enhance it.
+
+  ù Clocky is probably the most configurable corner clock, keyboard driver,
+    screen saver, mouse accelerator and system enhancer you ever seen -
+    thanks to SetClock III.
+
+  ù Clocky is also a useful add-on for users of @{"Taskbar" LINK "taskbar.hyp/main"}
+
+
+@label "Areas"
+@{B}Clocky 3.01's Main Areas of Use@{b}
+
+     ù EHC
+     ù Keyboard and mouse driver
+     ù Corner Clock
+     ù Screen Saver
+     ù System fixes (Y2K, MegaSTE, colors, sound)
+
+
+@label "Offerings"
+@{B}Clocky 3.01 offers@{b}
+
+     ù an obligate corner clock - but fast and available in all graphics
+       resolutions including Falcon TrueColor. Graphics cards ET4000,
+       Falcon NOVA and Milan native graphics is also supported in any
+       resolution and in 1,8,16,24 and 32-bit color depths.
+
+     ù a keyboard driver that lets you freely define two additional
+       keyboard layouts and switch between them with a simple hotkey press.
+
+     ù so called external hot keys (something like system-wide hot keys)
+       that can be freely assigned in a nice editor. This is actually a
+       very powerful feature. You might want to try it out if you don't use
+       it yet.
+
+     ù dead keys for typing unusual/national characters.
+
+     ù definable Alt-char layouts so you can type twice as much characters
+       as you could before (again useful mostly for national chars and
+       special symbols like e.g. IBM PC semigraphics chars).
+
+     ù on pre-TOS 2.06 systems users might appreciate the Alt+numeric pad
+       way of entering any ASCII code.
+
+     ù screen saver that is able to turn off the monitor (to switch it to
+       VESA/EPA power saving mode). This also speeds up Falcon operations.
+
+     ù dynamic mouse accelerator with definable speed (2x or 4x).
+
+     ù what about inverting the standard colors so you would have a black
+       background? This might save some luminofors in your monitor and also
+       your eyes... Clocky can switch that during boot optionally.
+
+     ù do you also loose connection with real world outside of you when you
+       sit for hours in front of your Atari? Clocky can neatly get you back
+       by beeping every hour so you can note the real time running...
+
+     ù turning off/on keyboard clicking sound and/or bell on bootup and
+       anytime later with a simple hot key press might be very handy while
+       listening to music (CD, MOD, MID, MP2, MP3).
+
+     ù workaround for Y2K bug in older ST machines (does your computer
+       thinks it's the year 2028 even if you set it to year 2000?)
+
+     ù special support for MegaSTE - switches 8/16 MHz on bootup and
+       anytime later with a simple hot key press - might be handy for
+       special copying/formatting tools that must run at 8MHz.
+
+     ù on non-English TOS machines Clocky can simulate the English language
+       setting so that the few applications that read this bit will start
+       speaking English. This is partially useful for non-German users of
+       German TOS machines.
+
+
+   The most distinct feature is that all these options above are switchable
+   anytime by simple hot key press. And those hot keys are even freely
+   editable! So you can define any state that is set at bootup and later
+   you play with it by pressing some defined hotkeys. Cool, isn't it?
+
+@endnode
+
+=====================================================================
+
+@node Installation "Clocky 3.01 - installation"
+@{B}Installation@{b}
+@line 1 70 0 0 1
+
+   1) put CLOCKY.PRG into your AUTO folder. I prefer to put it as the
+      first program, so its functions are available as soon as
+      possible.
+
+   2) start SETCLOCK.APP and @{"configure" LINK "Configuration"} CLOCKY.PRG for your system and
+      according to your needs.
+
+   3) copy @{"JCLKTOOL.ACC" LINK "EHC" "JCLKTOOL"} to root of your boot drive
+
+   4) reboot your computer so CLOCKY starts.
+
+
+  Notes:
+
+    ù If you have TOS version < 1.6 (ST/MegaST computer) then you might not
+      have CookieJar present in your system. In this case please put
+      the provided CJar10.PRG into your AUTO folder - before CLOCKY.PRG.
+
+    ù You might consider installing DTCOOKIE.PRG. This program creates
+      two cookies that hold pointers to current system date and time.
+      Clocky then reads this time and you need not to allow the XBIOS
+      patch.
+
+
+@endnode
+
+=====================================================================
+
+@node Configuration "Clocky 3.01 - configuration"
+@{B}Configuration@{b}
+@line 1 70 0 0 1
+
+   The main reason for delaying the release of Clocky 3.0 was the need
+   for a good configuration tool. SetClock I (written using WDIAL) wasn't
+   expandable and SetClock II (written four years ago using EnhancedGEM)
+   compiled under PureC only. So I took Christian Felsch's CF-lib and
+   started again from scratch. After a year of work there's SetClock III.
+
+   SetClock III is a standard GEM application with application info
+   window (that contains some useful informations) and the following
+   pulldown menu:
+
+   @{"SetClock" LINK "D_About"}  @{"File" LINK "M_File"}  @{"Settings" LINK "M_Settings"}
+
+   SetClock can configure either CLOCKY.PRG (the configuration is stored
+   inside the file CLOCKY.PRG) or directly the running instance of Clocky
+   in memory (in this case some options are disabled because they can't
+   be changed in runtime). If you're editting the running instance the
+   button [Apply] is enabled in most dialogs. By pressing that you make
+   your changes go to Clocky immediately without closing the dialog.
+   So you can quickly try various settings and watch the show before you
+   click on OK to close the dialog.
+
+@endnode
+
+=====================================================================
+
+@node M_File "SetClock III - File menu"
+@{B}Configuration - SetClock File menu@{b}
+@line 1 70 0 0 1
+
+   As said in Configuration preface, SetClock can edit either file or
+   the running instance of Clocky. If @{B}Resident Clocky@{b} menu item
+   is enabled, there's an instance of Clocky in memory. If you click
+   on the menu item, it gets checked and you are editing the instance
+   directly (all your changes are applied immeditely after clicking
+   on Apply or OK). Now if you click on the Resident Clocky item
+   it gets unchecked and you don't edit anything until you either load
+   a file or click on the Resident Clocky again.
+
+   If you click on @{B}Load CLOCKY.PRG@{b} you can load the file into
+   SetClock, edit it and later @{B}Save CLOCKY.PRG@{b} (it rewrites
+   the original file) or @{B}Save as ...@{b} (you can select another name
+   the Clocky will be stored under).
+
+   I won't bother you with description of @{B}Help@{b} and @{B}Quit@{b} menu
+   items...
+
+@endnode
+
+=====================================================================
+
+@node M_Settings "SetClock III - Settings menu"
+@{B}Configuration - SetClock Settings menu@{b}
+@line 1 70 0 0 1
+
+   ù @{"Display" LINK D_Display}
+   ù @{"Time Special" LINK D_TimeDate}
+   ù @{"Keyboard" LINK D_Keyboard}
+   ù @{"Screen Saver" LINK D_Saver}
+   ù @{"Miscellaneous" LINK D_Miscellaneous}
+
+   @{B}Enable Vectors@{b} and @{B}Printer@{b} are not yet finished.
+
+@endnode
+
+=====================================================================
+
+@node D_About "About Dialog"
+@{B}About dialog@{b}
+@line 1 70 0 0 1
+
+    Here you can find out who, when and with what tools created this
+    SetClock III.
+
+    By pressing the button @{B}Refresh Info@{b} SetClock re-checks some
+    system informations and re-display them in the window.
+
+@endnode
+
+=====================================================================
+
+@node D_Display "Display Settings"
+@{B}Display Settings@{b}
+@line 1 70 0 0 1
+
+   Clocky (as the name implies) is also a corner clock. It can display
+   date, time, day of week and same state informations anywhere on the
+   first line of screen (usually inside a GEM pull down menu space).
+   It works OK in all Atari bitplane modes and also in all but 4-bit
+   color depth in chunky graphics modes (ET-4000, NOVA and Milan graphics).
+
+   You can easily turn this displaying on and off by click on the
+   @{B}Time - general display switch@{b}. This switch has its own @{"hotkey" LINK "D_IntHotkeys"}.
+   Even if the displaying is turned off you can still have a quick look
+   at the current time/date - see @{"Special Time Settings" LINK "D_TimeDate"}.
+
+   The @{B}_IDT cookie@{b} is a TOS cookie that contains the national
+   format of date (the order of day, month and year and the date separator)
+   and time (12/24 hours format). Clocky fully supports all that.
+   The _IDT cookie might be changed by various NVRAM editors.
+
+   Other options in this dialog are quite self-explanatory. If not just drop
+   @{"me" LINK "Contact"} a note and I'll add some description here.
+
+   Oh, regarding the colors: they were picked from my NOVA Mach64 based
+   graphics card. The colors seems to be quite different on ET-4000 and
+   also on Milan S3-Trio card. I may do something with that in future.
+   The colors option were introduced when N.AES allowed users to change
+   the color of pulldown menu line (users then wanted to have the
+   background of Clocky display to be same as the system pulldown menu.
+   But then Jo Even came with the idea of transparent displaying of
+   Clocky data (which I implemented later) and then the color setting
+   became more or less unneeded.
+
+@endnode
+
+
+=====================================================================
+
+@node "D_Miscellaneous" "Miscellaneous Settings"
+@{B}Miscellaneous settings@{b}
+@line 1 70 0 0 1
+
+   Various settings of Clocky. Please note all of them have their own
+   hotkey for quick access (default hotkeys are the underlined chars).
+
+   ù Dynamic @{U}M@{u}ouse Accelerator
+
+       Very useful for people with higher resolution than ST-Low (320x200).
+       You can choose the acceleration (twice or four times - the higher
+       resolution (or the more you are in a hurry) the higher acceleration
+       is needed. You can also turn this off (and back on) by clicking
+       on Active check box. This checkbox has also its own @{"hotkey" LINK "D_IntHotkeys"}.
+
+   ù MegaSTE Turbo @{U}+-@{u}
+
+       Atari engineers made MegaSTE compatible with AtariST - it boots
+       at 8 MHz by default and the 16kB second level cache of the CPU
+       is disabled. This is great for gamers but all other users certainly
+       want to boot at full speed. So turn this option on and resort  your
+       AUTO folder so Clocky loads first. This option has two @{"hotkeys" LINK "D_IntHotkeys"}
+       which are compatible with IBM PC.
+
+   ù Invert @{U}B@{u}ackground Color
+
+       Sometimes the paper white background of SM124 gets boring. Most
+       other terminals have black background which saves luminofors and
+       eyes. Now you can try it out on your machine as well. Best is you
+       can easily switch the background/foreground colors by simple @{"hotkey" LINK "D_IntHotkeys"}.
+
+   ù @{U}K@{u}eyboard Sound effects
+
+       While listening to Paula (novadays I should better say FalconAMP :)
+       the clicking sound of keyboard might be irritating. So simply
+       turn that off and when the music ends turn that back on with another
+       @{"hotkey" LINK "D_IntHotkeys"}. If you want to turn off the bell
+       as well just select it in the popup window.
+
+   ù Printer - @{U}L@{u}atin2 conversion
+
+       Useful for Czech readers only. On-line conversion from one national
+       coding (bri Kamenickych) to another (IBM PC852) on the data going
+       to printer port. Can be turned off (before you print graphics)
+       and back on (when you want to print some text) with own @{"hotkey" LINK "D_IntHotkeys"}.
+
+@label "ResetEHC"
+   ù Reset EHC table on AES restart
+
+       If ResetEHC is enabled Clocky resets complete EHC table (so all EHCs
+       are lost) during AES restart. This is a must if you run ClockyTools
+       as an accessory and you'll change the screen resolution. See here @{"why" LINK "History" "AccessoryProblem"}.
+
+       The superior solution for multitasking systems is to rename
+       @{"ClockyTools" LINK "EHC" "JCLKTOOL"} to JCLKTOOL.APP and run it from the AES configuration
+       file. When running as an app it can easily detect resolution change
+       and unregister the hotkeys cleanly.
+
+       @{U}Technical note@{u}
+       Clocky detects the AES restart by loosing control over mouse (AES
+       likes to grab mouse vector on restart). If an application grabbed
+       the mousevec if would reset the EHC table as well so be careful and
+       if you would loose your EHC after starting an application please let
+       me know.
+
+   ù Delay init after AES restart (in VBL)
+
+       Clocky detects when AES starts - this is usually provided by
+       a resolution change and loading of ACCessories. Also mouse vector
+       is reset at this point and some other resident programs (NVDI and
+       and others) are being active at this interesting moment of boot.
+
+       It's best if Clocky survives this moment quietly waiting. After
+       some defined period of time (when the system calms down - depends
+       on number of accessories, the type of software used to enhance
+       Falcon resolution and other things) Clocky can detect the current
+       menu line color and the resolution, grab mouse and continue working.
+
+       Now you can specify this time in number of VBL (vertical blanks).
+       One second is 50 VBLs on PAL, 60 on NTSC, 72 on SM124 and 50-120 on
+       VGA. During the VBL countdown after AES's start Clocky doesn't
+       display anything (because a resolution change is expected) so don't
+       be surprised if corner clock appears several seconds after succesful
+       boot. Simply lower this VBL count number...
+
+
+@endnode
+
+@pnode "Dynamic"
+Dynamic means that if you move with
+mouse quickly for a certain length on
+the pad the mouse pointer on screen
+moves farther than if you move with
+the mouse slowly. The feature is much
+better than this description in my
+poor English. Just try it out and you
+will see...
+@endnode
+
+=====================================================================
+
+@node D_TimeDate "Time Special Settings"
+@{B}Time Special Settings@{b}
+@line 1 70 0 0 1
+
+   ù Workaround Y2K bug
+
+       Some older ST machines (without RTC) prepared a surprise for their
+       owners for this year. The machines think it's the year 2028 even
+       if you keep telling them it's only 2000. Try to turn on this switch
+       it might help you.
+
+   ù Detect time change if no DTCOOKIE
+
+       If you don't have DTCOOKIE installed Clocky can still follow any
+       changes you made to system time and date. Simply check this box
+       and Clocky will hook on the XBIOS vector. Though I personally
+       still prefer DTCOOKIE...
+
+   ù Quick time display
+
+       Even if you turn off the corner clock (because it disturbs you
+       or just because you don't want it to pollute your screen) sometimes
+       you might find useful to be able to quickly look at the current
+       time, date or even day of week. For this you @{U}could@{u} press
+       the hotkey "Show Time ON" and a while later press it again to
+       "Show Time OFF". But this was @{U}too complicated@{u} for Fufin so he asked
+       me for a simpler method. Here it is - define a combination of shift
+       keys and if you activate this Quick time display you can then watch
+       the corner clock by @{U}simple holding down the key@{u} combination.
+
+   ù Time sign
+
+       This is a really bad translation of Czech phrase for something
+       that you can hear from radio stations at every new hour (X:00:00).
+       Anyway, Clocky is able to beep shortly to notice you another hour
+       has passed while you were sitting in front of your lovely computer.
+       This works on machines with Yamaha sound chip only - i.e. all Atari
+       machines and also on Medusa and Hades computers. Milan is out, it
+       doesn't have Yamaha PSG.
+
+
+@endnode
+
+=====================================================================
+
+@node D_Keyboard "Keyboard Settings"
+@{B}Keyboard Settings@{b}
+@line 1 70 0 0 1
+
+   Clocky's most powerful feature is their enhanced keyboard driver.
+
+   ù Internal hotkeys
+
+       Clocky's internal functions (displaying a corner clock, running
+       a screen saver, switching keyboards etc.) can be driven by hotkeys
+       so they are accessible from any program, any time. Just define the
+       combination of shift keys, perhaps @{"edit the hotkeys" LINK "D_IntHotkeys"} and activate it.
+
+
+   ù External (System Wide) hotkeys
+
+       Purpose of these "external" hotkeys is similar to the hotkeys above:
+       to make something accessible anytime, from anywhere. Most GEM
+       applications offer some kind of Alt+ hotkeys but these hotkeys work
+       only if the application is focused - is on top of other applications.
+
+       With External hotkeys it's different: any application can become
+       an External Hotkey Client (EHC) and use System Wide hotkeys,
+       regardless if it's on top or in bottom of other applications.
+
+       You can turn on/off the catching and stealing of keys for EHC's
+       by checking/unchecking the Active box.
+
+       The combination of shift keys cannot be changed - it's hardcoded to
+       Alt+Control for all EHC's. At least it's compatible with Windows :-)
+
+
+   ù Editable keyboard layout
+
+       allows you to define and use two different keyboard layouts:
+       @{B}normal@{b} and @{B}coding@{b} style.
+
+       It's only up to you how you will @{"define the layout" LINK "D_Layout"}.
+       For example I own a German keyboard, run English TOS and want
+       to type Czech characters. So I define one layout to reflect
+       the German keyboard with some exceptions for easier writting
+       of C source code (backslash, # and similar useful symbols)
+       and the other layout I set to allow me to type Czech characters
+       as a typewriter.
+
+       Together with the @{B}original@{b} TOS keyboard layout you get
+       three keyboards and best is you can switch between them easily
+       with @{"hotkeys" LINK "D_IntHotkeys"}.
+
+
+   ù Editable Alt-keys
+
+       Martin-Eric thought that two definable keyboards is not enough
+       and come up with an idea of utilizing Alt-keys for typing even
+       more characters on a single keyboard. Even when I wasn't quite
+       sure it's a good idea I implemented it. If you want to use
+       Alt-, Alt+Shift and Alt+Capslock keys for typing check this box
+       and in the @{"Layout editor" LINK "D_Layout"} you can assign
+       new keys.
+
+
+   ù @{U}D@{u}ead Keys
+
+       you can type special letters with Dead keys. How does this work?
+       Simply: you press the Dead key (on Czech typewriter it's the second
+       key left from Backspace - but you can change this with SetClock) and
+       then you press a character key (say 'E'). The Clocky detects the
+       Dead key press and catches the 'E' character. Then it looks up the
+       char that is assigned in the dead keys table under 'E' (say it's
+       '') and replaces the original char in the keyboard buffer. The
+       result is that the operating system thinks you entered '' even if
+       there's no such char on the keyboard. You can define up to 40 keys
+       that have three different ASCII codes (without the Dead key, with
+       the Dead key and with Shifted Dead key).
+
+
+   ù @{U}A@{u}SCII codes by Alt+numblock
+
+       on TOS < 2.06 you might type special letters (e.g. with ASCII
+       code 240) by holding down Alt and typing the ASCII code on
+       numeric keypad. Newer TOS versions do this in their own keyboard
+       driver so you don't need to check the box there.
+
+
+@endnode
+
+=====================================================================
+
+@node D_Saver "ScreenSaver Settings"
+@{B}Screen Saver settings@{b}
+@line 1 70 0 0 1
+
+   Screen saver - it's purpose is to blank screen if there's an inactivity
+   for defined period of time.
+
+   Monitors that can be blanked:
+
+   ù monochromatic monitors SM124/144/146 connected to ST or Falcon
+   ù VGA monitor connected to Falcon VIDEL output
+   ù VGA monitor connected to Falcon NOVA graphics card
+   ù LED display of STacy
+
+   On Falcon this also speeds up the computer itself (up to +30%), because
+   VIDEL doesn't hog the data bus when screen saver is active.
+
+   Clocky blanks the VGA monitors by disabling horizontal synchronization
+   signal. This is a documented method (VESA standard) and it should turn
+   the VGA monitor into powersaving mode (saves not only luminofors but
+   also the current and thus our Mother Earth). Naturally the VGA monitor
+   must understand the VESA powersaving protocol. Luckily all new ones do
+   and if you are in doubt simply consult the monitor's documentation.
+
+   Pressing any key (e.g. Shift key) or moving with the mouse awakes
+   computer from the sleep mode.
+
+   You can also enable watching CD (Carrier Detect) on any of the three
+   serial ports of Atari computers. Then the modem activity won't let
+   computer fall to sleep and if it sleeps already the the CD signal will
+   wake the computer up. This has been implemented when I was running my
+   own JoyBBS. I found it really useful.
+
+   With @{"ClockyTools" LINK "EHC" "JCLKTOOL"} you can change either force
+   the screen saver to blank the screen immediately (by moving the mouse to
+   the @{U}upper right corner@{u} of screen) or, on the other hand, you can disable
+   the screen saver counter so it will never blank the screen - by moving
+   the mouse to the @{U}upper or lower left corner@{u} of screen. The
+   immediate blank is handy for example if you go for lunch. The stopped
+   screen saver is handy e.g. if you're reading watching something on the
+   screen for a long time (a game of Life, or a demo, or a nice picture).
+
+   If you want freedom with moving the mouse around your corners of screen
+   without confusing the Screen saver you can easily turn this feature off
+   in the @{"ClockyTools" LINK "EHC" "JCLKTOOL"} itself.
+
+@endnode
+
+=====================================================================
+
+@node D_Layout "Layout Settings"
+@{B}Keyboard Layout settings@{b}
+@line 1 70 0 0 1
+Keyboard layout editor (WYSIWYG).
+
+You can @{B}Load@{b} keyboard from a file and also @{B}Save@{b} it to a file.
+
+You can @{B}Get current@{b} keyboard layout from operating system.
+
+You can also @{B}Revert changes@{b} if you made something wrong.
+
+@endnode
+
+=====================================================================
+
+@node D_DeadKeys "DeadKeys Settings"
+@{B}DeadKeys settings@{b}
+@line 1 70 0 0 1
+The concept of dead key comes from type writters. You first press
+(and release) the dead key (which can be freely defined) and then
+you press the normal key. The resulting character is in the line
+@{U}Dead@{u} under the normal pressed key. If you held Shift when
+you first pressed the dead key you get the character from the
+@{U}+Shift@{u} line, again under the normal pressed key.
+
+Hope you got what I meant. If not, experiment a bit and you'll see.
+@endnode
+
+=====================================================================
+
+@node D_Ehc "EHC dialog"
+@{B}EHC dialog@{b}
+@line 1 70 0 0 1
+
+   Clocky has a GEM ally in @{"ClockyTools" LINK "EHC" "JCLKTOOL"} accessory. If installed it
+   registers as EHC and allows you to start any program you wish. It's
+   similar to hotkeys of your favourite desktop (e.g. function keys
+   in TOS desktop) but it's more universal.
+
+   Here you can define which hotkeys will be starting which programs.
+
+@{B}TOS Alt+key reserved combinations@{b}
+
+   You can select nearly any key on the keyboard, but Shift+function keys
+   and also arrow keys will not be detected properly, because the TOS
+   steals these keys itself. In the future version of Clocky this
+   limitation will go away (when I take a complete control over keyboard).
+
+@{B}Automatic reload@{b}
+
+   The great new thing is that after clicking on OK SetClock will save the
+   JCLKTOOL.SET and then send a GEM message to @{"ClockyTools" LINK "EHC" "JCLKTOOL"} to reload
+   the JCLKTOOL.SET file. Result is simple - the new hotkeys are working
+   immediately.
+
+
+@endnode
+
+=====================================================================
+
+@node D_EhcEdit "EHC Editor dialog"
+@{B}EHC Editor dialog@{b}
+@line 1 70 0 0 1
+Define new external hotkey (or optionally delete it).
+
+@{B}VA_START@{b} informs @{"ClockyTools" LINK "EHC" "JCLKTOOL"} how to try to start the application.
+Most newer GEM apps like VA_START.
+
+@{B}Pass through@{b}, if checked, means that the pressed key combination
+goes to the system keyboard buffer. Usually you don't want this so uncheck
+the box and Clocky will catch and steal the key from the keyboard buffer.
+
+@{B}Allow shifts@{b}, if checked, means that you can also hold a shift key
+when you are pressing the Alt+Control key combination. The result is that
+you have even more hotkeys because you can distinguish between Alt+Control+
+your_key and Alt+Control+Shift+your_key.
+
+@{B}Application@{b} is the path and filename of the program (double click
+on it to get a fileselector box).
+
+If you know the application is running already and understands VA_START,
+you can put here just AES name (plain name with no extension, like e.g.
+"thing" or "st-guide"). Similarly for already running accessories.
+
+Optionally you can define @{B}Command line@{b} for the started application.
+
+@endnode
+
+=====================================================================
+
+@node D_IntHotKeys "Clocky Hotkeys dialog"
+@{B}Hotkeys dialog@{b}
+@line 1 70 0 0 1
+Change internal Clocky's hotkeys here.
+@endnode
+
+=====================================================================
+
+@node EHC "Clocky 3.01 - External Hotkey Clients"
+@alias "External Hotkey Clients"
+@{B}External Hotkey Clients@{b}
+@line 1 70 0 0 1
+
+   Any program can become an External Hotkey Client (EHC) by registering
+   one or more scancodes in Clocky's EHC table. The Clocky monitors the
+   keyboard buffer and catch all registered Control-Alternate-key
+   combinations. The EHC periodically checks the EHC key register to detect
+   whether one of its hotkeys was pressed or not. This is basically an
+   unique method of controlling certain keys from any GEM application
+   regardless of the current state of the application (even applications
+   without input focus will detect the hotkeys).
+
+@alabel "JCLKTOOL"
+@{B}Clocky Tools¿@{b}
+
+   First Clocky's External Hotkey Client is ClockyTools (JCLKTOOL.ACC),
+   written by Fufin. It's an accessory but it can also be renamed to
+   JCLKTOOL.APP and run as a regular application (good for multitasking
+   systems where it can be started from AES.CNF file).
+
+   ClockyTools use a plain text configuration file named JCLKTOOL.SET.
+   This file is searched at several places: first at $HOME\defaults\, then
+   at $HOME, then in the current directory and at last in the root of the
+   boot drive (usually C:\). You can even put it as a command line
+   parameter to JCLKTOOL.APP!
+
+   The file JCLKTOOL.SET defines the GEM messages sent on different keys
+   detected. Currently only executing of applications
+   (VA_START/shel_write/pexec) is defined so it serves as a flexible
+   launcher of applications. This way you can easily start or top your
+   favourite applications (like is text editor, ST-Guide, e-mail program,
+   WWW browser or programming environment) by simple pressing the hotkey.
+
+   Thus with ClockyTools you get unified environment for launching
+   applications from any other application or desktop by simple keypress!
+   With SetClock III you get integrated easy-to-use editor of ClockyTools
+   hotkeys.
+
+@{B}Taskbar@{b}
+
+   Second Clocky's EHC is @{"Taskbar" LINK "taskbar.hyp/main"}, written by Jo Even Skarstein. This is
+   an application for N.AES/MultiTOS that shows a line with buttons
+   representing running applications at bottom of screen (similar to
+   Windows95, but better :-). With @{"Taskbar" LINK "taskbar.hyp/main"} you'll get also GEM configuration
+   tool that allows you to assign hotkeys to some of its functions.
+
+   Of course it's possible to start several different Clocky External
+   Hotkey Clients. Every client has to register the keys he's going
+   to use, so collisions between Hotkey clients are avoided. Programming of
+   EHCs is very easy thanks to provided EHC-lib.
+
+@endnode
+=====================================================================
+
+@node "Technical Background" "Clocky 3.01 - Technical Background"
+@{B}Technical Background@{b}
+@line 1 70 0 0 1
+
+
+   Clocky, as every TSR (terminate-and-stay-resident program) needs to
+   hook on an interrupt vector to be woken up by an event. Clocky does a
+   lot of different things so it needs various interrupt vectors:
+
+   ù Clocky needs to display time and do other periodical tasks so they
+     needed a timer interrupt. Clocky prior to v2.00 were using GEM timer
+     (exact 20 ms/50 Hz) but as it caused various problems with other
+     applications the new Clocky II. generation uses VBL as the main timer
+     interrupt. As VBL depends on refresh-rate of your monitor (50 Hz on
+     PAL TV, 60 Hz on NTSC TV and standard VGA, 71 Hz on SM124 and 50-120
+     Hz on Falcon SVGA) Clocky uses the 200 Hz time counter (system
+     variable named '_hz_200' at address 0x4BA) for exact time measurement.
+
+   ù Clocky is also driven by hotkeys, so they need to hook on keyboard
+     interrupt (ikbdsys of Kbdvbase()). They watch the keyboard buffer
+     found using by calling Iorec() and filter all internal hotkeys and
+     registered EHC from keyboard buffer. They also watch Alt-numeric
+     keypad presses (if turned on in configuration) and build up the ASCII
+     code which is put into the keyboard buffer when Alt key is released.
+     The last function is to catch the Dead key press and convert it into
+     appropriate ASCII value (there are conversion tables in Clocky that
+     will be editable soon).
+     Please note that you can disable nearly all functions of this Clocky'
+     keyboard handler including external hotkeys, Alt-numeric pad codes and
+     Dead keys.
+
+   ù Clocky accelerates mouse, so it hooks on mousevec of Kbdvbase(), too.
+     The routine for mouse accelerating is very short and thus very fast,
+     no need to worry that this might cause system slow-down.
+
+   ù Clocky can do on-the-fly conversion of characters sent to printer. For
+     this they hook on xconout vector at 0x57e.
+
+   Naturally all vectors follow XBRA standard, so other applications or
+   Clocky itself can deinstall any of those vectors or change the order of
+   hooked applications cleanly.
+
+
+@endnode
+=====================================================================
+@pnode "DTCOOKIE"
+ Small program that tries to search for the undocumented
+ GEMDOS variables that keeps current GEMDOS data and time.
+ When it finds them, it creates two Cookies - 'DATE' and
+ 'TIME'. Their values points to those system variables.
+ Clocky just searchs for these Cookies and if found,
+ Clocky is able to detect any system time/date change
+ immediately even without hooking on the XBIOS vector.
+
+ Please note that 'TIME' and 'DATE' Cookies are installed
+ also by other programs, such as GEMDOS replacement called
+ BigDOS. It would be nice if these variables became
+ standard and were implemented in MagiC and MiNT.
+@endnode
+=====================================================================
+
+@node "Drive Clocky yourself" "Clocky 3.01 - Drive Clocky yourself"
+@{B}Drive Clocky yourself@{b}
+@line 1 70 0 0 1
+
+
+   Clocky can be driven by other applications. The main Clocky's data
+   structure is documented and can be accessed by other programs. You, as
+   the programmer, just need to find where the Clocky's data structure is.
+   You do it easily - by getting the value of 'JCLK' Cookie.
+
+   You'll get a pointer to data structure shown in JCLKCOOK.H file. After
+   checking the name and version data fields (have a look into VYPIS.C, for
+   example) you can start changing actual parameters of Clocky.
+
+   The most important is probably the bit field. Every function or feature
+   of Clocky has assigned one bit in this 32-bit long variable 'parametry'.
+
+   An example from real application: I also develop the Atari800 software
+   emulator of 8-bit computer for Falcon. The emulator installs its own
+   keyboard handler (as usually every game or demo does), so Clocky doesn't
+   get informations from keyboard neither mouse while the emulator runs and
+   that's why the Clocky screensaver is not resetted even if you type
+   something in the emulator. The result is clear - after some time Clocky
+   disables the screen output to save screen. So what did I do? I simply
+   put a small function into the Atari800 emulator that searchs for Clocky
+   and if it finds them, it disables the screen saver while emulator is
+   running, by simple
+
+   original_saver = parametry.Saveron;
+   parametry.Saveron = FALSE;
+
+   Of course that I want to restore the original values when emulator ends.
+
+   parametry.Saveron = original_saver;
+
+   and that's all. This ensures screen saver does not become active when
+   you play your favourite game from 1980's. Can you feel the power hidden
+   in this driving of Clocky from your applications?
+
+
+@endnode
+=====================================================================
+
+@node "History" "Clocky 3.01 - History of development"
+@{B}History of development@{b}
+@line 1 70 0 0 1
+
+
+This development report in English has been started recently, though Clocky
+is developed since 1989 when I bought my first 520STM. Currently the
+development continues on Falcon with Afterburner040 and NOVA Mach64 graphics
+card.
+
+Clocky were inspired by several utilities: QuanTOS, Maccel, Dunkel,
+KbdSwitch and others.
+
+Direct jump to @{"latest Clocky version" LINK "History" "Latest_version"}:
+
+1998/3/7 - Clocky 2.09beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+o first English version of Clocky and SETCLOCK. Quick translation of
+  non-existing Clocky's documentation.
+
+o invers colors (white on black) re-implemented. Hotkey is 'B'. Works in
+  monochrome on SM124 and in 2, 4, 16 and 256 colors on Falcon.
+
+o external keys handling made easier - it also allows several EHC at once.
+
+o MegaSTE switching 8/16 MHz is re-implemented again. Please test.
+
+o Cookies "DATE" and "TIME" are searched for twice (when Clocky starts
+  and also after start of GEM). That means you need not to put DTCOOKIE
+  before Clocky anymore :-) It also allows me to put these Cookies into
+  MiNT kernel so you won't need DTCOOKIE under MiNT then...
+
+o screen saver and invers colors on non-Falcon machines test the presence
+  of SM124 and do not work on TV.
+
+o The pointer to CookieJar in SETCLOCK is get by Setexc() - hopefully it
+  will improve compatibility (no need to switch into Super mode)
+
+
+1998/3/10 - Clocky 2.10beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Thanks to English version Clocky were exported to Norway :-) Heh, in
+  return I got a lot of bug reports :-)
+
+o algorithm for EHC was changed: the external hotkey (actual_key in the
+  Clocky cookie struct) is valid for only 105 milisecond now. If the
+  actual_key is changed anyhow in this time period, the key is lost for
+  system (i.e. it's used as a hotkey and so system must not detect it).
+  Otherwise the pressed key is put back to keyboard buffer and actual_key
+  is zeroed. Since the timeout is just about 0.1 second, the keypress-lag
+  is minimal.
+
+
+1998/3/14 - Clocky 2.11beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Printer conversion can be enabled/disabled by hotkey again (bug fix)
+
+o Clocky now estimates the 1 second period even when DTCOOKIE is installed
+  (DTCOOKIE and system time goes in 2 second step). That means you should
+  have DTCOOKIE installed always, because Clocky gets only better with it.
+
+
+1998/3/15 - Clocky 2.20beta - Clocky's CookieJar struct changed!!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o old bugfix concerning MegaSTE Turbo hotkey
+
+o Jo Even Skarstein suggested a very reasonable idea about EHC registering.
+  See and use his EHC-lib when you program your own External Hotkey Client.
+
+o dead keys can be defined freely (up to 30 dead keys). Need to update
+  SETCLOCK.PRG first.
+
+o internal's Clocky hot keys can be defined freely. But please wait for
+  new version of SETCLOCK...
+
+
+1998/3/24 - Clocky 2.21beta - I've got NOVA graphics card in my Falcon!!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Clocky is now finally compatible with graphics cards (at least with NOVA
+  in 256 colors)
+
+o CPX module from JAY Soft is included - great work, guys!
+
+o thanks Jo Even Skarstein for his EHC-lib
+
+
+1998/3/29 - Clocky 2.22beta - a beep tone when a hour is over
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Clocky makes a beep tone at new hour. You can enable/disable this feature
+  in CPX module only (SETCLOCK hasn't been updated yet).
+
+o NOVA graphics is supported in 2 and 256 colors now
+
+o fixed a deep hidden bug which could affect system stability under
+  certain condition.
+
+o optimized print routines - Clocky is much shorter now.
+
+
+1998/4/21 - Clocky 2.30beta - English TOS is emulated
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o if you have got a non English TOS and you prefer English before German,
+  you can turn the "Emulation of English TOS" on. Several programs start
+  talking in English even when they always talked in German with you.
+  Namely ICD harddisk driver, HDDRIVER and also several CPX modules and
+  perhaps other multilangual programs...
+
+o you can turn on/off the beep at new hour in SETCLOCK now.
+
+
+1998/5/6 - Clocky 2.31beta - NOVA Falcon screen saver!
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+o English TOS emulation fixed and enhanced (now affects also the _AKP Cookie)
+
+o NOVA Falcon screen saver implemented - it simply turns off the horizontal
+  sync for monitor output, which should yield in screen saving (on VESA
+  Powersaving compatible monitors at least).
+
+
+1998/6/14 - Clocky 2.34beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o internal/external hot keys work better now, as the key auto-repeat is
+  disabled.
+
+o EHC handling has been changed - there's no 105 ms timeout.
+
+o Clocky contains an experimental code for displaying free RAM under MiNT.
+  Unfortunately the code does no work at all :-)
+
+
+1998/6/19 - Clocky 2.36beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o great news - Clocky can uninstall itself cleanly! Just start Clocky
+  second time and if it detects another running instance in memory they
+  uninstall itself from VBL, IKBD, mouse and prntout interrupt vectors as
+  well as remove the JCLK Cookie. It also returns back the original
+  keyboard layout and updates the screen if time/date was shown.
+
+  So do not reboot your computer if you just want to remove Clocky! :-)
+
+o keyboard layout switching on-the-fly (using hotkey + O, N or C) is much
+  much safer now. Previously I've been calling XBIOS Keytbl() from VBL
+  interrupt, which was not too safe (even if I tried to ensure its safety
+  as much as possible). Now I just set the keyboard tables' vectors. Thanks
+  for idea goes to Julian Reschke.
+
+  So do not hesitate to switch between the keyboards - it's safe and fast!
+
+o the 'hour beep' is the last XBIOS Dosound() call in VBL in Clocky. Since
+  this version I lock all interrupts around the Dosound() call to make it
+  even more safe. The Dosound() call itself does nothing but sets one
+  vector (in TOS 4.04), so it should be OK to call Dosound(). But if
+  something bad happen during the 'hour beep' just turn this feature off
+  and let me know what happened. You have been warned... :-)
+
+  I personally use it without problems under TOS/MiNT.
+
+o I have removed the experimental code for displaying free RAM under MiNT.
+  It will return into MiNT-Clocky, a new version of Clocky designed
+  specially for MiNT operating system.
+
+
+1998/6/21 - Clocky 2.37beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o fixed bug with displaying in 15 and 16bit color depth on NOVA graphics
+
+o new SETCLOCK can edit the dead keys (up to 30 keys can be defined)
+
+
+1999/4/11 - Clocky 2.38beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o added checking for Carrier Detected (modem on-line) on ports Modem1 (MFP)
+  and Modem2 (SCC B). You can configure this feature with Clocky.CPX, the
+  SETCLOCK.PRG does not support that yet. If you turn this on, the screen
+  saver will not turn your screen off while you're on-line (say on a BBS or
+  Internet).
+
+o Milan graphics support added (untested).
+
+o a little piece of self-modifying code (for saving the screen background
+  in upper right corner) was removed. It was not very 68040/68060 friendly
+  (write back instruction cache).
+
+
+1999/4/17 - Clocky 2.40beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o 1999/4/22 - first version of transparent display routines
+
+o 1999/4/25 - still playing with proper screen output
+
+o 1999/9/25 - LED Stacy screen saver
+
+1999/10/10 - Clocky 2.41beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o ET-4000 detection and support
+
+o 1999/12/26 - new data structure, OnBoot block introduced
+               configurable time after AES start
+
+1999/12/31 - Clocky 2.50alpha
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o first Y2K bugfixes in Clocky
+
+o 2000/01/01 - tried to release 2.50 but failed
+
+o 2000/01/08 - trials to stabilize new data struct
+
+2000/01/29 - Clocky 2.60beta
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o XBIOS vector and keyboard driver fixes
+
+o 2000/02/05 - first real working Y2K fix for corner clock
+
+2000/02/06 - Clocky 3.00alpha
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o beep at new hour doesn't use XBIOS anymore. We gain more stability
+
+o 2000/03/09 - various fixes to corner clock routines
+
+o 2000/03/12 - scancode is editable, corner clock follows _IDT
+
+o 2000/03/19 - color corner clock
+
+o 2000/03/21 - important fixes to Clocky woken up after long sleeping
+
+o 2000/03/24 - fixed beep for 68000 machines
+
+o 2000/03/29 - fixes for non-DTCOOKIE timer stuff
+
+o 2000/04/02 - Alt key table implemented in keyboard driver
+             - SCC A CD check (Serial 2)
+
+o 2000/04/05 - fixes in keyboard driver
+             - fix in Y2K workaround for 68000 machines
+
+o 2000/04/08 - don't check the availability of Alt-keys keyboard files by
+               looking at the system date but better at system version
+
+o 2000/05/08 - MegaSTE turbo keys are editable
+
+o 2000/05/21 - fixes in keyboard driver
+
+
+1999/6/15 - Clocky 3.00
+~~~~~~~~~~~~~~~~~~~~~~~
+o errors in manual time incrementation
+
+o search the Alt tables from beginning and stop at scancode 0
+
+@alabel "AccessoryProblem"
+@label "Latest_version"
+1999/6/19 - Clocky 3.01
+~~~~~~~~~~~~~~~~~~~~~~~
+o if the @{"ClockyTools" LINK "EHC" "JCLKTOOL"} run as an accessory there was a problem with
+  registering the same hotkeys after every resolution change. After
+  detailed discussion in MiNT mailing list where we agreed that it's
+  impossible to cleanly detect when an accessory is terminated by AES
+  due to resolution change. Thus it's impossible for @{"ClockyTools" LINK "EHC" "JCLKTOOL"}
+  to unregister the hotkeys before they get killed by AES and then reloaded
+  second time. As a certain solution of this problem I implemented a
+  special switch in Clocky called @{"ResetEHC" LINK "D_Miscellaneous" "ResetEHC"}.
+
+
+@endnode
+=====================================================================
+
+@node "Status" "Clocky 3.01 - Status"
+@{B}Status@{b}
+@line 1 70 0 0 1
+
+
+   Clocky¿ is fairware. You can spread it freely providing all files
+   are included and no changes are made.
+
+   If you use Clocky regularly and you like it, consider sending me a small
+   amount of money to address
+
+   Petr Stehlik
+   Lamanisko 5340
+   CZ-76001 Zlin
+   Czech Republic
+
+
+   New versions of Clocky as well as other software I work on appears on my
+   WWW page at address @{B}http://joy.atari.org/@{0}
+
+@endnode
