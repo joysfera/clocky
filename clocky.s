@@ -100,6 +100,108 @@ _SaveSTacy= 2	STacy LED
 *************************************************
 zacatek	bra	init
 
+*************************************************
+	dc.l	XBRA,IDENTIFIER
+kbd_jmp	dc.l	0
+
+my_kbd	tst.b	d0
+	bmi	.kbd_rts		pro released key do nothing
+
+	movem.l	a0-a1/d1-d2,-(A7)	first my KBD routine
+	
+	move.l	kbshift(PC),a0
+
+* zde se vyhodnocuj¡ intern¡ hotkeje Clock–
+	move.b	hotshift(PC),d1	jsou povolen‚ intern¡ hotkeje Clock–?
+	beq	.ehc		0 = nepovolen‚
+	cmp.b	(a0),d1		dr‘¡m kombinaci pro hotkey?
+	bne	.ehc
+
+	tst.b	is_megae		Turbo jen pro MegaSTE!
+	beq.s	.hotzamegou
+	cmp.b	turbo_on,d0	'+' on numeric pad
+	bne.s	.hot1
+	bset	#_Miscturb-8,_MSC	Turbo ON
+	bra	.vyhodznak
+*---
+.hot1	cmp.b	turbo_off,d0	'-' on numeric pad
+	bne.s	.hotzamegou
+	bclr	#_Miscturb-8,_MSC	Turbo OFF
+	bra	.vyhodznak
+*---
+.hotzamegou
+	cmp.b	hotk_inv,d0	'B'
+	bne.s	.hot2
+	bsr	invertuj
+	bra	.vyhodznak
+*---
+.hot2	cmp.b	hotk_klik,d0	'K'
+	bne.s	.hotcyklus
+	move.b	klikmask(PC),d1
+	eor.b	d1,conterm\w
+	bra	.vyhodznak
+*---
+.hotcyklus
+	lea	hotkeje(PC),a1
+	moveq	#8,d1		hotkeje kontroluju odzadu
+.hotk1	cmp.b	(a1,d1),d0
+	dbeq	d1,.hotk1
+	tst	d1
+	bmi.s	.ehc		‘ dn  z hork˜ch kl ves
+
+;--- je to jedna z horkych klaves
+	move.w	d1,d2
+	subq.w	#5,d2		O = 1, N = 2, C = 3
+	ble.s	.hotk3
+	and.b	#%11111100,_KBD
+	and.b	#%00000011,d2
+	or.b	d2,_KBD		zap¡¨u zmˆnu kl vesnice
+	bra.s	.vyhodznak
+*---
+.hotk3	moveq	#0,d2
+	move.b	.hotbity(PC,d1),d2
+	move.l	STR(PC),d1
+	bchg	d2,d1
+	move.l	d1,STR
+	bra.s	.vyhodznak
+
+*		 0   1   2   3   4   5   6   7   8
+*                   'T','D','A','S','M','L','O','N','C'
+*		$14,$20,$1E,$1F,$32,$26,$18,$31,$2E
+.hotbity	dc.b	_ShowTime,_Kbddead,_Kbdasci,_Saveron,_Miscmys,_Miscprnt
+
+* zde za‡¡naj¡ extern¡ hotkeje
+.ehc	btst	#_KbdEHC-16,_KBD	vybirat EH z hn¡zda?
+	beq.s	.kbd_ret
+
+	lea	ehc_scantable(PC),a1
+	tst.b	(a1,d0)		je tato kl vesa registrov na ?
+	beq.s	.kbd_ret
+
+	lea	128(a1),a1	druh  polovina EHC tabulky
+	move.b	(a0),d1		p©e‡ti KbShift
+	btst	#1,(a1,d0)	zkus flag pro SHIFT_ALLOWED
+	beq.s	.shall
+	and.b	#%1100,d1		nech jen Alt+Control
+.shall	cmp.b	#%1100,d1		porovnej s Alt+Control
+	bne.s	.kbd_ret
+
+	move.b	d0,act_key	zap¡¨u scancode pr vˆ stisknut‚ kl vesy do actual_key
+	move.b	(a0),act_shift	zap¡¨u stav p©e©azova‡–
+
+	btst	#0,(a1,d0)	zkus flag pro PASS_THROUGH
+	bne.s	.kbd_ret
+	bra.s	.vyhodznak	a vyhodim z bufru
+
+
+.kbd_ret	movem.l	(SP)+,a0-a1/d1-d2
+.kbd_rts	move.l	kbd_jmp(pc),-(sp)	then continue with the original kbd_key handler
+	rts
+
+.vyhodznak	movem.l	(SP)+,a0-a1/d1-d2
+	rts
+
+*************************************************
 	dc.l	XBRA,IDENTIFIER
 ikbd_jmp	dc.l	0
 
@@ -122,24 +224,6 @@ my_ikbd	movem.l	A0-A3/D0-D6,-(A7)	continue with my IKBD routine
 	move.l	kbshift(PC),A2
 	move.b	(A2),D4		p©e‡ti KbShift
 	and.b	#%1111,D4		nech jen Shifty, Control a Alternate
-
-***************************************
-* zde se kontroluje Kuknut¡ na Clocky
-	move.b	hottime(PC),D5	kombinace Shift– pro kuknut¡ na Clocky
-	beq.s	zakukem		0 = nepovolen‚ kuknut¡
-* zde kontrola na kuk na Clocky
-	cmp.b	D5,D4		je stla‡ena kombinace Kukkeje?
-	beq.s	.juk
-* NEdr‘¡m hottime kombinaci
-	tst.b	KukClk		bylo kuk no na Clocky?
-	beq.s	zakukem
-	sf.b	KukClk		tak na to zapome¤
-	bclr	#_ShowTime-24,STR
-	bra.s	zakukem
-*--
-.juk	bset	#_ShowTime-24,STR	bylo ShowTime?
-	bne.s	zakukem		ano, nen¡ co ©e¨it
-	st.b	KukClk		nen¡, tak‘e si pozna‡ KukClk
 
 ***************************************
 * zde se dokon‡uje Alt-numerick˜ blok
@@ -169,99 +253,7 @@ obycej	cmp.w	D1,D2		p©i¨lo v–bec nˆco ?
 	clr.l	d3
 	move.b	1(a1,d2),d3	SCANCODE stla‡en‚ kl vesy
 ***************************************
-* zde za‡¡naj¡ extern¡ hotkeje
-	btst	#_KbdEHC-16,_KBD	vybirat EH z hn¡zda?
-	beq.s	prijety
-
-	lea	ehc_scantable(PC),A3
-	tst.b	(a3,d3)		je tato kl vesa registrov na ?
-	beq.s	prijety
-
-* kod pro Externi Hotkeje Clocku (EHC) - vzdy Control+Alt+key (+nekdy Shift)
-	move.b	d4,d5
-	lea	128(a3),a3	druh  polovina EHC tabulky
-	btst	#1,(a3,d3)	zkus flag pro SHIFT_ALLOWED
-	beq.s	.shall
-	and.b	#%1100,d5		nech jen Alt+Control
-.shall	cmp.b	#%1100,d5		porovnej s Alt+Control
-	bne.s	prijety
-
-	move.b	d3,act_key	zap¡¨u scancode pr vˆ stisknut‚ kl vesy do actual_key
-	move.b	(a2),act_shift	zap¡¨u stav p©e©azova‡–
-
-	btst	#0,(a3,d3)	zkus flag pro PASS_THROUGH
-	bne.s	.pass
-	bra	vyhodznak		a vyhodim z bufru
-.pass	bra	ikbd_ret
-*-------*
-***************************************
-* zde se vyhodnocuj¡ hotkeje Clock–
-prijety	move.b	hotshift(PC),D5	jsou povolen‚ intern¡ hotkeje Clock–?
-	beq	ikbd1		0 = nepovolen‚
-	cmp.b	D5,D4		dr‘¡m kombinaci pro hotkey?
-	bne	ikbd1
-
-**********************************************************************
-*** Hork‚ kl vesy (scancode v D3) - vyhodnocen¡
-**********************************************************************
-	tst.b	is_megae		Turbo jen pro MegaSTE!
-	beq.s	.hotzamegou
-	cmp.b	turbo_on,d3	'+' on numeric pad
-	bne.s	.hot1
-	bset	#_Miscturb-8,_MSC	Turbo ON
-	bra.s	hot_end
-*---
-.hot1	cmp.b	turbo_off,d3	'-' on numeric pad
-	bne.s	.hotzamegou
-	bclr	#_Miscturb-8,_MSC	Turbo OFF
-	bra.s	hot_end
-*---
-.hotzamegou
-	cmp.b	hotk_inv,D3	'B'
-	bne.s	.hot2
-	bsr	invertuj
-	bra.s	hot_end
-*---
-.hot2	cmp.b	hotk_klik,D3	'K'
-	bne.s	.hotcyklus
-	move.b	klikmask(PC),D5
-	eor.b	D5,conterm\w
-	bra.s	hot_end
-*---
-.hotcyklus
-	lea	hotkeje(PC),A3
-	moveq	#8,D5		hotkeje kontroluju odzadu
-hotk1	cmp.b	(A3,D5),D3
-	dbeq	d5,hotk1
-	tst	d5
-	bmi	ikbd_ret		‘ dn  z hork˜ch kl ves
-
-*********************************
-*--- je to jedna z horkych klaves
-
-	move.w	d5,d3
-	subq.w	#5,d3		O = 1, N = 2, C = 3
-	ble.s	hotk3
-	and.b	#%11111100,_KBD
-	and.b	#%00000011,d3
-	or.b	d3,_KBD		zap¡¨u zmˆnu kl vesnice
-	bra.s	hot_end
-*---
-hotk3	moveq	#0,d3
-	move.b	hotbity(PC,d5),d3
-	move.l	STR(PC),d5
-	bchg	d3,d5
-	move.l	d5,STR
-
-hot_end	bra	vyhodznak
-*		 0   1   2   3   4   5   6   7   8
-*                   'T','D','A','S','M','L','O','N','C'
-*		$14,$20,$1E,$1F,$32,$26,$18,$31,$2E
-hotbity	dc.b	_ShowTime,_Kbddead,_Kbdasci,_Saveron,_Miscmys,_Miscprnt
-
-***************************************************************************
-
-ikbd1	tst.b	zal_krep
+	tst.b	zal_krep
 	beq.s	.neconterm
 	bset	#1,conterm\w	zapnout AUTOREPEAT
 	sf.b	zal_krep		priste uz nezapinat
@@ -681,9 +673,16 @@ SCC_CD	move.w	sr,d1
 ***************************************
 * zobraz udaje na obrazovku
 DisplayUpdate:
+	move.l	kbshift(PC),a0
+	move.b	(a0),d0		p©e‡ti KbShift
+	and.b	#%1111,d0		nech jen Shifty, Control a Alternate
+	move.b	hottime(PC),d1	kombinace Shift– pro kuknut¡ na Clocky
+	beq.s	.nezobraz		0 = nepovolen‚ kuknut¡
+	cmp.b	d0,d1		je stla‡ena kombinace Kukkeje?
+	beq.s	.zobraz
 	btst	#_ShowTime-24,STR
 	beq.s	.nezobraz
-	tst.w	mys_ok		dokud se to nezmeni, tak nepis
+.zobraz	tst.w	mys_ok		dokud se to nezmeni, tak nepis
 	bne.s	.nezobraz		(starym fontem do nove obrazovky)
 	bsr	Print		zobraz aktu ln¡ ‡as
 .nezobraz	rts
@@ -2234,7 +2233,6 @@ sekundy	ds.b	1
 mys_ok	ds.w	1
 adr_oldms	ds.l	1
 zal_hss	ds.w	1
-KukClk	ds.b	1
 zal_krep	ds.b	1
 orig_STacy_video	ds.b	1
 YY_sep_za	ds.b	1
