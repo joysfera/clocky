@@ -1,10 +1,10 @@
 @author "Petr Stehlik"
 @database "all-in-one utility"
 @subject "Documentation/Utilities"
-@$VER: Clocky.hyp 1.2.1 (20.6.00)
+@$VER: Clocky.hyp 1.2.2 (24.11.00)
 
-@node main "Clocky 3.01"
-@{B}Clocky¿ 3.01                                                2000/06/20@{b}
+@node main "Clocky 3.02"
+@{B}Clocky¿ 3.02                                                2000/11/26@{b}
 @line 1 70 0 0 1
 
        What is Clocky? It's a very useful all-in-one multiutility for Atari
@@ -29,7 +29,7 @@
    Petr
 
    e-mail: joy@sophics.cz
-   WWW     http://joy.sophics.cz/
+   WWW     http://joy.atari.org/
 
 
 
@@ -38,22 +38,22 @@
 @pnode "Contact"
 @alias "let me know"
  e-mail: joy@sophics.cz
- WWW     http://joy.sophics.cz/
+ WWW     http://joy.atari.org/
 @endnode
 =====================================================================
 
-@node "News" "Clocky 3.01 - What's new"
+@node "News" "Clocky 3.02 - What's new"
 @{B}What's new@{b}
 @line 1 70 0 0 1
 
 ù @{"General differences between Clocky II and III" LINK "News" "General"}
-ù @{"News in 3.01" LINK "News" "Clocky301"}
+ù @{"News in 3.02" LINK "News" "Clocky302"}
 
 @label "General"
 @{B} General differences between Clocky II and Clocky III @{b}
 
    Users familiar with Clocky 2.X might be interested in comparison of
-   Clocky 2.X and this new Clocky 3.01. Besides the obvious enhancements
+   Clocky 2.X and this new Clocky 3.02. Besides the obvious enhancements
    you find when you browse through new SetClock III there are also the
    following changes in the Clocky internals:
 
@@ -100,11 +100,35 @@
    I have also written more informations about the @{"Screen Saver" LINK "D_Saver"} and also
    the @{"automatic reload of JCLKTOOL.SET" LINK "D_Ehc"}.
 
+@label "Clocky302"
+@{B} News in Clocky 3.02 @{b}
+
+   There are several fixes in the SETCLOCK tool. VA_START in the EHC
+   editor can be set correctly now. Editor of dead keys can be closed by
+   its [OK] button. Also the internal hotkeys keyboard layout dialog resets
+   all previously selected keys. Thanks for bug reports to Standa/Jay Soft.
+
+   Clocky itself should be MiNT 1.15 TimeZone compatible now. This has been
+   achieved by reading time from GEMDOS instead from XBIOS. It seems that
+   you have to start Clocky after MiNT if you want to let Clocky read the
+   new time. Or you could start Clocky before MiNT but you would have to
+   create a simple program that would be called after MiNT and would do
+   just Tsettime(Tgettime());
+
+   Also the function for detecting time/date change hooks on GEMDOS vector
+   now. There's a small change in the precendence: if you enable watching
+   the date/time change in SETCLOCK then Clocky ignores DTCOOKIE
+   altogether.
+
+   This hooking is conditional - if you don't allow watching the time
+   changes the GEMDOS vector is not utilized. Similarly for Y2K XBIOS fix -
+   if you don't enable that Clocky does not hook on the XBIOS vector.
+
 @endnode
 
 =====================================================================
 
-@node Compatibility "Clocky 3.01 - Compatibility"
+@node Compatibility "Clocky 3.02 - Compatibility"
 @{B}Compatibility@{b}
 @line 1 70 0 0 1
 
@@ -198,7 +222,7 @@
 
 =====================================================================
 
-@node Features "Clocky 3.01 - Features"
+@node Features "Clocky 3.02 - Features"
 @{B}Features@{b}
 @line 1 70 0 0 1
 
@@ -232,7 +256,7 @@
 
 
 @label "Areas"
-@{B}Clocky 3.01's Main Areas of Use@{b}
+@{B}Clocky 3.02's Main Areas of Use@{b}
 
      ù EHC
      ù Keyboard and mouse driver
@@ -242,7 +266,7 @@
 
 
 @label "Offerings"
-@{B}Clocky 3.01 offers@{b}
+@{B}Clocky 3.02 offers@{b}
 
      ù an obligate corner clock - but fast and available in all graphics
        resolutions including Falcon TrueColor. Graphics cards ET4000,
@@ -305,7 +329,7 @@
 
 =====================================================================
 
-@node Installation "Clocky 3.01 - installation"
+@node Installation "Clocky 3.02 - installation"
 @{B}Installation@{b}
 @line 1 70 0 0 1
 
@@ -337,7 +361,7 @@
 
 =====================================================================
 
-@node Configuration "Clocky 3.01 - configuration"
+@node Configuration "Clocky 3.02 - configuration"
 @{B}Configuration@{b}
 @line 1 70 0 0 1
 
@@ -841,7 +865,7 @@ Change internal Clocky's hotkeys here.
 
 =====================================================================
 
-@node EHC "Clocky 3.01 - External Hotkey Clients"
+@node EHC "Clocky 3.02 - External Hotkey Clients"
 @alias "External Hotkey Clients"
 @{B}External Hotkey Clients@{b}
 @line 1 70 0 0 1
@@ -897,7 +921,7 @@ Change internal Clocky's hotkeys here.
 @endnode
 =====================================================================
 
-@node "Technical Background" "Clocky 3.01 - Technical Background"
+@node "Technical Background" "Clocky 3.02 - Technical Background"
 @{B}Technical Background@{b}
 @line 1 70 0 0 1
 
@@ -958,7 +982,7 @@ Change internal Clocky's hotkeys here.
 @endnode
 =====================================================================
 
-@node "Drive Clocky yourself" "Clocky 3.01 - Drive Clocky yourself"
+@node "Drive Clocky yourself" "Clocky 3.02 - Drive Clocky yourself"
 @{B}Drive Clocky yourself@{b}
 @line 1 70 0 0 1
 
@@ -1001,7 +1025,7 @@ Change internal Clocky's hotkeys here.
 @endnode
 =====================================================================
 
-@node "History" "Clocky 3.01 - History of development"
+@node "History" "Clocky 3.02 - History of development"
 @{B}History of development@{b}
 @line 1 70 0 0 1
 
@@ -1251,7 +1275,6 @@ o errors in manual time incrementation
 o search the Alt tables from beginning and stop at scancode 0
 
 @alabel "AccessoryProblem"
-@label "Latest_version"
 1999/6/19 - Clocky 3.01
 ~~~~~~~~~~~~~~~~~~~~~~~
 o if the @{"ClockyTools" LINK "EHC" "JCLKTOOL"} run as an accessory there was a problem with
@@ -1263,11 +1286,16 @@ o if the @{"ClockyTools" LINK "EHC" "JCLKTOOL"} run as an accessory there was a 
   second time. As a certain solution of this problem I implemented a
   special switch in Clocky called @{"ResetEHC" LINK "D_Miscellaneous" "ResetEHC"}.
 
+@label "Latest_version"
+1999/11/24 - Clocky 3.02
+~~~~~~~~~~~~~~~~~~~~~~~~
+o Clocky now reads time from GEMDOS, not XBIOS. This should make it
+  TimeZone aware under MiNT >= 1.15.
 
 @endnode
 =====================================================================
 
-@node "Status" "Clocky 3.01 - Status"
+@node "Status" "Clocky 3.02 - Status"
 @{B}Status@{b}
 @line 1 70 0 0 1
 
@@ -1275,7 +1303,7 @@ o if the @{"ClockyTools" LINK "EHC" "JCLKTOOL"} run as an accessory there was a 
    Clocky¿ is fairware. You can spread it freely providing all files
    are included and no changes are made.
 
-   If you use Clocky regularly and you like it, consider sending me a small
+   If you use Clocky regularly and like it, consider sending me a small
    amount of money to address
 
    Petr Stehlik
