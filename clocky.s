@@ -674,16 +674,9 @@ SCC_CD	move.w	sr,d1
 ***************************************
 * zobraz udaje na obrazovku
 DisplayUpdate:
-	move.l	kbshift(PC),a0
-	move.b	(a0),d0		p©e‡ti KbShift
-	and.b	#%1111,d0		nech jen Shifty, Control a Alternate
-	move.b	hottime(PC),d1	kombinace Shift– pro kuknut¡ na Clocky
-	beq.s	.nezobraz		0 = nepovolen‚ kuknut¡
-	cmp.b	d0,d1		je stla‡ena kombinace Kukkeje?
-	beq.s	.zobraz
 	btst	#_ShowTime-24,STR
 	beq.s	.nezobraz
-.zobraz	tst.w	mys_ok		dokud se to nezmeni, tak nepis
+	tst.w	mys_ok		dokud se to nezmeni, tak nepis
 	bne.s	.nezobraz		(starym fontem do nove obrazovky)
 	bsr	Print		zobraz aktu ln¡ ‡as
 .nezobraz	rts
@@ -692,6 +685,28 @@ DisplayUpdate:
 	dc.l	XBRA,IDENTIFIER
 	dc.l	0
 VBLtimer	movem.l	A0-A6/D0-D7,-(SP)
+
+* zde se kontroluje Kuknut¡ na Clocky
+	move.l	kbshift(PC),a0
+	move.b	(a0),d2
+	and.b	#%01111,d2	zapomen na CapsLock
+	move.b	hottime(PC),d1	kombinace Shift– pro kuknut¡ na Clocky
+	beq.s	.zakukem		0 = nepovolen‚ kuknut¡
+* zde kontrola na kuk na Clocky
+	cmp.b	d2,d1		je stla‡ena kombinace Kukkeje?
+	beq.s	.juk
+* NEdr‘¡m hottime kombinaci
+	tst.b	KukClk		bylo kuk no na Clocky?
+	beq.s	.zakukem
+	sf.b	KukClk		tak na to zapome¤
+	bclr	#_ShowTime-24,STR
+	bra.s	.zakukem
+*--
+.juk	bset	#_ShowTime-24,STR	bylo ShowTime?
+	bne.s	.zakukem		ano, nen¡ co ©e¨it
+	st.b	KukClk		nen¡, tak‘e si pozna‡ KukClk
+.zakukem
+
 	bsr	Do_It		ka‘dou 1/50-80s udˆlej v¨e promˆnn‚
 	bsr	ctrl_vect		zkontroluj vektor my¨i
 	tst.w	mys_ok		do¨lo ke zmˆnˆ ?
@@ -710,7 +725,7 @@ VBLtimer	movem.l	A0-A6/D0-D7,-(SP)
 * zde chodime az kazdou celou sekundu
 	bsr	ZvysitCas
 	bsr	ScreenSaver
-	bsr.s	DisplayUpdate
+	bsr	DisplayUpdate
 
 * konec rutiny casovace
 .tim_end	movem.l	(SP)+,A0-A6/D0-D7
@@ -2161,11 +2176,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.10beta  2000/06/25 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.10beta  2000/06/29 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.10beta  25.06.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.10beta  29.06.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
@@ -2244,6 +2259,7 @@ mys_ok	ds.w	1
 adr_oldms	ds.l	1
 zal_hss	ds.w	1
 zal_krep	ds.b	1
+KukClk	ds.b	1
 orig_STacy_video	ds.b	1
 YY_sep_za	ds.b	1
 ampm	ds.b	1
