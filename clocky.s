@@ -37,19 +37,17 @@ hht	= $ffff8282
 * SCC = (_MCH == 1 && _MCHlo == $20) || _MCH == 2 || _MCH == 3
 * MFP = !Falcon
 
-ALT_LEN	= 32	velikost bloku pro Alt-klavesy
-
 *
 _InvColor	= 0	invertovat barvy p©i bootu
 _EngSys	= 1	emulovat anglickò systÇm
-_GDSettime= 2	sledovat GEMDOS Tsettime/Tsetdate
+_XBSettime= 2	sledovat XBIOS Settime
 _XBFixY2K	= 3	opravit chybu Y2K v XBIOSovÇm Gettime
-_ResetEHC = 4	smazat EHC tabulku pri restartu AESu
 
 _HookPrint= 11	povàsit se na Print a t°m umoënit konverzi
 _HookMouse= 12	povàsit se na Mouse a t°m umoënit zrychlovaá
 _HookKbd	= 13	povàsit se na KbdVec a t°m umoënit horkÇ/EHC/Alt/dead kl†vesy
 _HookVBL	= 14	povàsit se na VBL a umoënit t°m zobrazov†n° áasu
+_HookXBIOS= 15	povàsit se na XBIOS
 
 * verejna struktura Joy Clocku, na kterou ukazuje CookieJar('JCLK') *
 *-------------------------------------------------------------------*
@@ -102,155 +100,91 @@ zacatek	bra	init
 	dc.l	XBRA,IDENTIFIER
 ikbd_jmp	dc.l	0
 
-	move.l	#my_ikbd,-(sp)	return address from original IKBD handler
-	move.l	ikbd_jmp(PC),-(sp)
-	rts			call original IKBD handler
+my_ikbd	bsr	roznout		klavesnice vzdy rozne obraz
 
-my_ikbd	movem.l	A0-A3/D0-D6,-(A7)	continue with my IKBD routine
+	movem.l	a0-a2/d1-d4,-(A7)	first my IKBD routine
+	move.l	kbshift(PC),a0
 
-	move.w	sr,d6
-	or.w	#$700,sr		z†kaz v®ech p©eru®en°
-
-	bsr	roznout		klavesnice vzdy rozne obraz
-
-***************************************
-* zde se napl§uj° registry A0-A2/D0-D2/D4
-	move.l	iorec(PC),A0
-	move.l	(A0)+,A1		ukazatel na buffer kl†vesnice
-	movem.w	(A0),D0-2		D0 dÇlka, D1 n†sl.z†pis, D2 n.áten°
-	move.l	kbshift(PC),A2
-	move.b	(A2),D4		p©eáti KbShift
-	and.b	#%1111,D4		nech jen Shifty, Control a Alternate
-
-***************************************
-* zde se kontroluje Kuknut° na Clocky
-	move.b	hottime(PC),D5	kombinace Shiftñ pro kuknut° na Clocky
-	beq.s	zakukem		0 = nepovolenÇ kuknut°
-* zde kontrola na kuk na Clocky
-	cmp.b	D5,D4		je stlaáena kombinace Kukkeje?
-	beq.s	.juk
-* NEdrë°m hottime kombinaci
-	tst.b	KukClk		bylo kuk†no na Clocky?
-	beq.s	zakukem
-	sf.b	KukClk		tak na to zapome§
-	bclr	#_ShowTime-24,STR
-	bra.s	zakukem
-*--
-.juk	bset	#_ShowTime-24,STR	bylo ShowTime?
-	bne.s	zakukem		ano, nen° co ©e®it
-	st.b	KukClk		nen°, takëe si poznaá KukClk
-
-***************************************
-* zde se dokonáuje Alt-numerickò blok
-zakukem	tst.w	cislo		m†m rozdàlanÇ á°slo ?
-	beq.s	obycej
-	cmp.b	#%1000,D4		uë jsem pustil Alt?
-	beq.s	obycej		je®tà ne...
-	move.w	cislo(PC),D3
-	ext.l	d3		vybuduji dlouhÇ slovo pro kl†vesovò bufer
-	clr.w	cislo		smaëu budovanÇ á°slo
-
-* z†pis hotovÇho znaku do klavesoveho bufru
-zapis_buf	addq.w	#4,D2		posu§ pozici pro n†sleduj°c° áten°
-	cmp.w	D0,D2
-	bcs.s	.pretekl
-	moveq	#0,D2
-.pretekl	cmp.w	D1,D2		porovnej s pozic° pro n†sl. z†pis
-	beq.s	.buf_full		asi p©eplnànò buffer kl†vesnice
-	move.w	D2,4(A0)		uloë pozici pro n†sl. áten°
-	move.l	D3,(A1,D2)	uloë p©ipravenò znak na átec° pozici
-.buf_full	bra	ikbd_ret
-
-***************************************
-* zde se poprvÇ d°v†m, p©i®el-li znak
-obycej	cmp.w	D1,D2		p©i®lo vñbec nàco ?
-	beq	ikbd_ret		ne, ë†dnò novò znak v kl†v. bufferu
-	clr.l	d3
-	move.b	1(a1,d2),d3	SCANCODE stlaáenÇ kl†vesy
-***************************************
 * zde zaá°naj° extern° hotkeje
 	btst	#_KbdEHC-16,_KBD	vybirat EH z hn°zda?
 	beq.s	prijety
 
-	lea	ehc_scantable(PC),A3
-	tst.b	(a3,d3)		je tato kl†vesa registrov†na ?
+	lea	ehc_scantable(PC),a1
+	tst.b	(a1,d0)		je tato kl†vesa registrov†na ?
 	beq.s	prijety
 
-* kod pro Externi Hotkeje Clocku (EHC) - vzdy Control+Alt+key (+nekdy Shift)
-	move.b	d4,d5
-	lea	128(a3),a3	druh† polovina EHC tabulky
-	btst	#1,(a3,d3)	zkus flag pro SHIFT_ALLOWED
+	lea	128(a1),a1	druh† polovina EHC tabulky
+	btst	#1,(a1,d0)	zkus flag pro SHIFT_ALLOWED
 	beq.s	.shall
-	and.b	#%1100,d5		nech jen Alt+Control
-.shall	cmp.b	#%1100,d5		porovnej s Alt+Control
+	move.b	(a0),d1		p©eáti KbShift
+	and.b	#%1100,d1		nech jen Alt+Control
+.shall	cmp.b	#%1100,d1		porovnej s Alt+Control
 	bne.s	prijety
 
-	move.b	d3,act_key	zap°®u scancode pr†và stisknutÇ kl†vesy do actual_key
-	move.b	(a2),act_shift	zap°®u stav p©e©azovaáñ
+	move.b	d0,act_key	zap°®u scancode pr†và stisknutÇ kl†vesy do actual_key
+	move.b	(a0),act_shift	zap°®u stav p©e©azovaáñ
 
-	btst	#0,(a3,d3)	zkus flag pro PASS_THROUGH
-	bne.s	.pass
+	btst	#0,(a1,d0)	zkus flag pro PASS_THROUGH
+	bne	ikbd_ret
 	bra	vyhodznak		a vyhodim z bufru
-.pass	bra	ikbd_ret
-*-------*
-***************************************
+
 * zde se vyhodnocuj° hotkeje Clockñ
-prijety	move.b	hotshift(PC),D5	jsou povolenÇ intern° hotkeje Clockñ?
-	beq	ikbd1		0 = nepovolenÇ
-	cmp.b	D5,D4		drë°m kombinaci pro hotkey?
-	bne	ikbd1
+prijety	move.b	hotshift(PC),d1	jsou povolenÇ intern° hotkeje Clockñ?
+	beq	ikbd3		0 = nepovolenÇ
+	cmp.b	(a0),d1		drë°m kombinaci pro hotkey?
+	bne	ikbd3
 
 **********************************************************************
 *** HorkÇ kl†vesy (scancode v D3) - vyhodnocen°
 **********************************************************************
 	tst.b	is_megae		Turbo jen pro MegaSTE!
 	beq.s	.hotzamegou
-	cmp.b	turbo_on,d3	'+' on numeric pad
+	cmp.b	turbo_on,d0	'+' on numeric pad
 	bne.s	.hot1
 	bset	#_Miscturb-8,_MSC	Turbo ON
 	bra.s	hot_end
 *---
-.hot1	cmp.b	turbo_off,d3	'-' on numeric pad
+.hot1	cmp.b	turbo_off,d0	'-' on numeric pad
 	bne.s	.hotzamegou
 	bclr	#_Miscturb-8,_MSC	Turbo OFF
 	bra.s	hot_end
 *---
 .hotzamegou
-	cmp.b	hotk_inv,D3	'B'
+	cmp.b	hotk_inv,d0	'B'
 	bne.s	.hot2
 	bsr	invertuj
 	bra.s	hot_end
 *---
-.hot2	cmp.b	hotk_klik,D3	'K'
+.hot2	cmp.b	hotk_klik,d0	'K'
 	bne.s	.hotcyklus
-	move.b	klikmask(PC),D5
-	eor.b	D5,conterm\w
+	move.b	klikmask(PC),d1
+	eor.b	d1,conterm\w
 	bra.s	hot_end
 *---
 .hotcyklus
-	lea	hotkeje(PC),A3
-	moveq	#8,D5		hotkeje kontroluju odzadu
-hotk1	cmp.b	(A3,D5),D3
-	dbeq	d5,hotk1
-	tst	d5
+	lea	hotkeje(PC),a1
+	moveq	#8,d1		hotkeje kontroluju odzadu
+hotk1	cmp.b	(a1,d1),d0
+	dbeq	d1,hotk1
+	tst	d1
 	bmi	ikbd_ret		ë†dn† z horkòch kl†ves
 
 *********************************
 *--- je to jedna z horkych klaves
 
-	move.w	d5,d3
-	subq.w	#5,d3		O = 1, N = 2, C = 3
+	move.w	d1,d2
+	subq.w	#5,d2		O = 1, N = 2, C = 3
 	ble.s	hotk3
 	and.b	#%11111100,_KBD
-	and.b	#%00000011,d3
-	or.b	d3,_KBD		zap°®u zmànu kl†vesnice
+	and.b	#%00000011,d2
+	or.b	d2,_KBD		zap°®u zmànu kl†vesnice
 	bra.s	hot_end
 *---
-hotk3	moveq	#0,d3
-	move.b	hotbity(PC,d5),d3
-	move.l	STR(PC),d5
-	bchg	d3,d5
-	move.l	d5,STR
+hotk3	moveq	#0,d2
+	move.b	hotbity(PC,d1),d2
+	move.l	STR(PC),d1
+	bchg	d2,d1
+	move.l	d1,STR
 
 hot_end	bra	vyhodznak
 *		 0   1   2   3   4   5   6   7   8
@@ -258,118 +192,45 @@ hot_end	bra	vyhodznak
 *		$14,$20,$1E,$1F,$32,$26,$18,$31,$2E
 hotbity	dc.b	_ShowTime,_Kbddead,_Kbdasci,_Saveron,_Miscmys,_Miscprnt
 
-***************************************************************************
-
-ikbd1	tst.b	zal_krep
-	beq.s	.neconterm
-	bset	#1,conterm\w	zapnout AUTOREPEAT
-	sf.b	zal_krep		priste uz nezapinat
-.neconterm
-
-*** ASCII k¢dy p©es Keypad
-	cmp	#$206,sysver	pro systÇm >= 2.06 to nem† smysl ZMENIT!!
-	bge.s	ikbd2
-	btst	#_Kbdasci-16,_KBD
-	beq.s	ikbd2
-	cmp.b	#%1000,D4		drë°m si Alt ?
-	bne.s	ikbd2
-	sub.b	#$67,D3		< '0' na keypadu ?
-	bmi.s	ikbd2
-	cmp.b	#9,D3		> '9' na keypadu ?
-	bhi.s	ikbd2
-	ext.w	D3
-	moveq	#10,D5
-	mulu	cislo(PC),D5
-	add.b	tabulka(PC,D3),D5
-	move.w	D5,cislo
-	bra.s	vyhodznak
-tabulka	dc.b 7,8,9,4,5,6,1,2,3,0
-
-****************************************************************************
-
-ikbd2	btst	#_Kbddead-16,_KBD
-	beq.s	ikbd3
-*** MrtvÇ kl†vesy
-	tst	presmrt
-	beq.s	zivy
-	move.b	3(A1,D2),D3	ASCII k¢d stlaáenÇ kl†vesy
-	lea	produraz(PC),A3
-	clr.w	D5
-	move.b	durazlen,D5
-	subq.w	#1,D5		pro DBEQ
-prek1	cmp.b	(A3,D5),D3
-	dbeq	D5,prek1
-	tst.w	D5
-	bmi.s	prekend
-	lea	s_hakem(PC),A3
-	tst.b	cara
-	beq.s	prek2
-	lea	s_carou(PC),A3
-prek2	move.b	(A3,D5),3(A1,D2)	uloë p©ipravenò znak na átec° pozici
-prekend	clr.w	presmrt
-	bra	ikbd_ret
-
-*-------*
-zivy	cmp.b	DeadKey(PC),D3	SCANCODE mrtvÇ kl†vesy ?
-	bne.s	ikbd3
-	and.b	#%0011,D4		alespo§ jeden z Shiftñ ?
-	beq.s	noshit
-	st.b	hak
-	bra.s	vyhodznak
-noshit	st.b	cara
-*         a pokraáovat vyhozenim znaku
-
-***************************************
-* smazat mrtvolku z bufru
-vyhodznak	bclr	#1,conterm\w	vypnout AUTOREPEAT
-	beq.s	.neni_rep
-	st.b	zal_krep
-.neni_rep
-	subq.w	#4,D2
-	bpl.s	.nepodtek
-	add.w	D0,D2
-.nepodtek	move.w	D2,4(A0)
-	bra.s	ikbd_ret
-
 ***************************************************************
 * Alt-klavesy
 ikbd3	btst	#_KbdAltK-16,_KBD
 	beq.s	ikbd4
 	tst.b	extended_kbd	pokud je to jiz v BIOSu tak nedelat
 	bne.s	ikbd4
-	move.b	(a2),d4		znovunacist kvuli CapsLocku
-	btst	#3,d4		drë°m si Alt ?
+	move.b	(a0),d1		znovunacist kvuli CapsLocku
+	btst	#3,d1		drë°m si Alt ?
 	beq.s	ikbd4
 
-	move.b	_KBD(PC),d5
-	and.b	#%11,d5		jen typ kl†vesnice
-	cmp.b	#2,d5
+	move.b	_KBD(PC),d2
+	and.b	#%11,d2		jen typ kl†vesnice
+	cmp.b	#2,d2
 	beq.s	.normal
-	cmp.b	#3,d5
+	cmp.b	#3,d2
 	bne.s	ikbd4
-	lea	altklav(PC),a3
+	lea	altklav(PC),a1
 	bra.s	.zanorm
-.normal	lea	altkey(PC),a3
-.zanorm	btst	#4,d4		je CapsLock?
+.normal	lea	altkey(PC),a1
+.zanorm	btst	#4,d1		je CapsLock?
 	beq.s	.necaps
-	lea	2*ALT_LEN(a3),a3
+	lea	2*32(a1),a1
 	bra.s	.smycka
-.necaps	and.b	#%0011,d4		nàkterò z Shiftñ?
+.necaps	and.b	#%0011,d1		nàkterò z Shiftñ?
 	beq.s	.smycka
-	lea	ALT_LEN(a3),a3
-.smycka	clr.w	d5
-.loop	move.b	(a3,d5),d4
-	beq.s	ikbd4		konec Alt kl†ves
-	cmp.b	d4,d3
-	beq.s	.found
-	addq.w	#2,d5		SCAN na sudòch pozic°ch
-	cmp.w	#ALT_LEN,d5
-	blt.s	.loop
-.found	move.b	1(a3,d5),d5
-	move.b	d5,3(a1,d2)	uloë p©ipravenò znak na átec° pozici
+	lea	32(a1),a1
+.smycka	moveq	#30-1,d2
+.loop	subq	#1,d2		SCAN na sudòch pozic°ch
+	cmp.b	(a1,d2),d0
+	dbeq	d2,.loop
+	tst	d2
+	bmi.s	ikbd4		ë†dn† z Alt kl†ves
+	move.b	1(a1,d2),d0	vyt†hni z tabulky Alt znak
 ikbd4
-ikbd_ret	move.w	d6,sr		povolit p©eru®en°
-	movem.l	(A7)+,A0-A3/D0-D6
+ikbd_ret	movem.l	(SP)+,a0-a2/d1-d4
+	move.l	ikbd_jmp(pc),-(sp)	then continue with original ikbd_key handler
+	rts
+
+vyhodznak	movem.l	(SP)+,a0-a2/d1-d4
 	rts
 
 ***************************************
@@ -427,29 +288,20 @@ tiskni	move.l	kam2lat(pc),a0
 ctrl_vect	move.l	adr_mouse(pc),a0	a0 = ukazatel na strukturu ikbd
 	lea	mouse_jmp+4(pc),a1	a1 = ukazatel na moji mysi funkci
 	cmp.l	(a0),a1		je moje mys prvni na rade ?
-	beq.s	.mouse_ok            je => vsechno OK
+	beq.s	mouse_ok            je => vsechno OK
 				; kdyz neni, nekdo se nam napichl na vektor mysi (asi GEM)
 	move.l	adr_oldms(pc),d0	d0 = stara hodnota ze struktury ikbd
-	bne.s	.kontrola		kdyz uz nejaka byla, musime zkontrolovat, jestli je to XBRA retez
+	bne.s	kontrola		kdyz uz nejaka byla, musime zkontrolovat, jestli je to XBRA retez
 
 	move.l	(a0),adr_oldms	jestli jeste nebyla zadna, zapamatuj aktualni a zarad do retezu
-	bra.s	.zaradit
-
-.kontrola	cmp.l	(a0),d0		porovnaji se adresy mysi a stare mysi
-	bne.s	.mouse_ok		pokud se lisi, NIC se NEDEJE !
-
-	btst	#_ResetEHC,OnBoot1
-	beq.s	.zaradit
-	lea	ehc_scantable(PC),a2
-	moveq	#(256/4)-1,d0
-.loop	clr.l	(a2)+
-	dbf	d0,.loop
-
-; kdyz jsou stejne, provede se zarazeni moji mysi
-.zaradit	move.l	(a0),-4(a1)	zapsat do XBRA retezu a mys opet na prvni misto
+	bra.s	zaradit
+kontrola	cmp.l	(a0),d0		porovnaji se adresy mysi a stare mysi
+	bne.s	mouse_ok		pokud se lisi, NIC se NEDEJE !
+				; kdyz jsou stejne, provede se zarazeni moji mysi
+zaradit	move.l	(a0),-4(a1)	zapsat do XBRA retezu a mys opet na prvni misto
 	move.l	a1,(a0)
 	move.w	refresh(pc),mys_ok
-.mouse_ok	rts			registry obnov° rodiá
+mouse_ok	rts			registry obnov° rodiá
 ****************************************
 invertuj	movem.l	a0-a1/d0-d1,-(sp)
 	tst.b	is_falcon
@@ -593,7 +445,7 @@ ZvysitCas	tst.l	TIMECOOK
 	add.l	#200,d0
 	move.l	d0,abs_cas	nejd©°v p©ipravit dal®° sekundu
 	
-	move.l	DATECOOK,a1	TODO promysli n†sleduj°c° k¢d: moën† lze DT_COOK nahradit jen time a date (to uë existuje p©ed d_v_t)
+	move.l	DATECOOK,a1
 	moveq	#0,d0
 	cmp.w	#0,a1
 	beq.s	.datumne
@@ -606,9 +458,7 @@ ZvysitCas	tst.l	TIMECOOK
 	bsr	Inkrementuj_cas	st†le nezmànàno => inkrementuj ruánà
 	bra.s	.timer3
 .zmena	move.l	d0,DT_COOK
-	bsr	Prepar_cas
-	swap	d0
-	bsr	Prepar_datum
+	bsr	Prepar
 
 .timer3
 * t£tnout jedinà pokud sekundy=0 a minuty=0 a t£t†n° je povoleno
@@ -682,9 +532,16 @@ SCC_CD	move.w	sr,d1
 ***************************************
 * zobraz udaje na obrazovku
 DisplayUpdate:
+	move.l	kbshift(PC),a0
+	move.b	(a0),d0		p©eáti KbShift
+	and.b	#%1111,d0		nech jen Shifty, Control a Alternate
+	move.b	hottime(PC),d1	kombinace Shiftñ pro kuknut° na Clocky
+	beq.s	.nezobraz		0 = nepovolenÇ kuknut°
+	cmp.b	d0,d1		je stlaáena kombinace Kukkeje?
+	beq.s	.zobraz
 	btst	#_ShowTime-24,STR
 	beq.s	.nezobraz
-	tst.w	mys_ok		dokud se to nezmeni, tak nepis
+.zobraz	tst.w	mys_ok		dokud se to nezmeni, tak nepis
 	bne.s	.nezobraz		(starym fontem do nove obrazovky)
 	bsr	Print		zobraz aktu†ln° áas
 .nezobraz	rts
@@ -720,7 +577,6 @@ VBLtimer	movem.l	A0-A6/D0-D7,-(SP)
 ***************************************
 * Ruán° inkrementace áasu ©°zen† p©es 200Hz áasovaá
 Inkrementuj_cas:
-	movem.l	a1-a4/d1-d3,-(sp)
 	lea	sekundy(pc),a1
 	addq.b	#1,(a1)		inkrementuj sekundy
 	cmp.b	#60,(a1)		pokud je to ®edes†t†
@@ -756,9 +612,11 @@ Inkrementuj_cas:
 	blt.s	.day_over
 	move.b	#1,(a2)		1. màs°c v dal®°m roce
 	addq.b	#1,(a3)		inkrementuj rok
+	cmp.b	#100,(a3)		pokud je stò
+	blt.s	.day_over
+	clr.b	(a3)		tak je to rok 2000! :)
 .day_over	bsr	denvtydnu
-.konec	movem.l	(sp)+,a1-a4/d1-d3
-	rts
+.konec	rts
 ***************************************
 Compute_print_size:
 	movem.l	d0-d1,-(sp)
@@ -1373,24 +1231,39 @@ SaveBend	moveq	#1,d0		smazat ZERO flag, protoze jsme zalohovali
 ***************************************
 	dc.l	XBRA,IDENTIFIER
 xbios_jmp	dc.l	0
-	move.l	a0,-(sp)
 	move.l	usp,a0
-	btst	#5,4(sp)
+	btst	#5,(sp)
 	beq.s	.nesup
-	lea	10(sp),a0
+	lea	6(sp),a0
 	tst.w	_longframe\w
 	beq.s	.nesup
 	addq.l	#2,a0
 .nesup
+	btst	#_XBSettime,OnBoot1
+	beq.s	.xb1
+
+	tst.l	TIMECOOK
+	bne.s	.xb1		pokud je TimeCookie, tak netrap XBIOS
+
+	cmp.w	#22,(a0)		Settime
+	bne.s	.xb1
+; uloë si pr†và zmànànò áas
+	movem.l	a1-a3/d0-d3,-(sp)
+	move.l	2(a0),d0
+	bsr.s	Prepar
+	movem.l	(sp)+,a1-a3/d0-d3
+	bra.s	.xb_end
+
+.xb1	btst	#_XBFixY2K,OnBoot1
+	beq.s	.xb_end
+
 	cmp.w	#23,(a0)		Gettime
 	bne.s	.xb_end
 	move.l	2(sp),navrat
 	move.l	#xbios_Gettime,2(sp)	return address
 
-.xb_end	move.l	(sp)+,a0
-	move.l	xbios_jmp,-(sp)
-	rts
-
+.xb_end	move.l	xbios_jmp,a0
+	jmp	(a0)
 navrat	dc.l	0
 
 xbios_Gettime:
@@ -1404,107 +1277,55 @@ xbios_Gettime:
 
 .xbios_y2k_ok:
 	move.l	(sp)+,d1
-	move.l	navrat(pc),-(sp)
+	move.l	navrat(PC),-(sp)
 	rts
 
 ***************************************
-	dc.l	XBRA,IDENTIFIER
-gemdos_jmp	dc.l	0
-	movem.l	a0/d0,-(sp)
-	move.l	usp,a0
-	btst	#5,8(sp)
-	beq.s	.nesup
-	lea	14(sp),a0
-	tst.w	_longframe\w
-	beq.s	.nesup
-	addq.l	#2,a0
-.nesup
-	cmp.w	#$2d,(a0)		Tsettime
-	bne.s	.tdat
-; uloë si pr†và zmànànò áas
-	move.w	2(a0),d0
-	bsr.s	Prepar_cas
-	bra.s	.end
-
-.tdat	cmp.w	#$2b,(a0)		Tsetdate
-	bne.s	.end
-; uloë si pr†và zmànànÇ datum
-	move.w	2(a0),d0
-	bsr.s	Prepar_datum
-
-.end	movem.l	(sp)+,a0/d0
-	move.l	gemdos_jmp,-(sp)
-	rts
-
-***************************************
-StartTime	movem.l	A0-A3/D0-D3,-(sp)	registry zniá° GEMDOS
-
-	move.w	#$2a,-(sp)
-	trap	#1		áte GEMDOS datum
+GetTime	movem.l	A0-A3/D1-D3,-(sp)
+	move	#$17,-(sp)
+	trap	#14		áte áas z hardwaru (na strojich bez HW hodin (ST) to v preruseni tuhne)
 	addq.l	#2,sp
-	bsr.s	Prepar_datum
-	
-	move.w	#$2c,-(sp)
-	trap	#1
-	addq.l	#2,sp
-	bsr.s	Prepar_cas
-	
-	move.l	_hz_200\w,d0	pamatuju si okamëik pravdy, odtud budu p©iá°tat po sekundà
-	add.l	#200,d0
-	move.l	d0,abs_cas
+	movem.l	(sp)+,A0-A3/D1-D3
 
-	movem.l	(sp)+,A0-A3/D0-D3
-	rts
-***************************************
-Prepar_cas:
-	movem.l	a0/d0-d1,-(sp)
-	move.w	d0,d1
-	lea	sekundy(PC),A0	p©ekop†n° áasu z GEMDOS tvaru do BCD
+	move.l	_hz_200\w,d1	pamatuju si okamëik pravdy, odtud budu p©iá°tat po sekundà
+	add.l	#200,d1
+	move.l	d1,abs_cas
+
+Prepar	move.l	D0,D1
+	lea	sekundy(PC),A1	p©ekop†n° áasu z XBIOS tvaru do BCD
 	moveq	#$1F,D0
 	and.b	D1,D0
 	lsl.b	#1,D0
-	move.b	D0,(A0) 		sekundy
+	move.b	D0,(A1) 		sekundy
 	lsr.l	#5,D1
 	moveq	#$3F,D0
 	and.b	D1,D0
-	move.b	D0,-(A0)		minuty
+	move.b	D0,-(A1)		minuty
 	lsr.l	#6,D1
 	moveq	#$1F,D0
 	and.b	D1,D0
-	move.b	D0,-(A0)		hodiny
-	movem.l	(sp)+,a0/d0-d1
-	rts
-	
-Prepar_datum:
-	movem.l	a0/d0-d1,-(sp)
+	move.b	D0,-(A1)		hodiny
+	lsr.l	#5,D1
+
 	lea	datum(PC),A0
-	cmp.w	(A0),d0		zmànil se od minulÇho P©epa©-en° datum?
-	beq.s	.prep_end
-	move.w	d0,(A0)		jo, tak si zapamatuj novò
-	
-	lea	hodiny(PC),A0	hodiny = dny+1
-	move.w	d0,d1		a p©ekopej
+	cmp	(A0),d1		zmànil se od minulÇho P©epa©-en° datum?
+	beq.s	dvt_end
+
+	move	d1,(A0)		jo, tak p©epoá°tej datum
 	moveq	#$1F,D0
 	and.b	D1,D0
-	move.b	D0,-(A0)		dny
+	move.b	D0,-(A1)		dny
 	lsr	#5,D1
 	moveq	#$F,D0
 	and.b	D1,D0
-	move.b	D0,-(A0)		màs°ce
+	move.b	D0,-(A1)		màs°ce
 	lsr	#4,D1
 	and.b	#$7F,D1		jen 7 bitñ pro rok
 	add.b	#$50,D1		p©iáti 80 k rokñm
-	move.b	D1,-(A0)		roky uloë
-	
-	bsr.s	denvtydnu
-.prep_end
-	movem.l	(sp)+,a0/d0-d1
-	rts
+	move.b	D1,-(A1)		roky uloë
 
-***************************************
-* vòpoáet dne v tòdnu
-denvtydnu	movem.l	d0-d3/a0-a1,-(sp)
-	moveq	#0,D0
+* vòpoáet dne v tòdnu (d_v_t)
+denvtydnu	moveq	#0,D0
 	moveq	#0,D1
 	moveq	#0,D2
 	moveq	#0,D3
@@ -1514,26 +1335,25 @@ denvtydnu	movem.l	d0-d3/a0-a1,-(sp)
 	move.b	-(A0),D1
 	move.b	-(A0),D2
 	subq	#2,D1
-	bmi.s	.dvt3
-.dvt1	move.b	(A1,D1),D3
+	bmi.s	dvt3
+dvt1	move.b	(A1,D1),D3
 	add	D3,D0
 	cmp.b	#1,D1
-	bne.s	.dvt2
+	bne.s	dvt2
 	moveq	#3,D3
 	and.b	D2,D3
-	bne.s	.dvt2
+	bne.s	dvt2
 	addq	#1,D0
-.dvt2	dbf	D1,.dvt1
-.dvt3	moveq	#$B,D1
+dvt2	dbf	D1,dvt1
+dvt3	moveq	#$B,D1
 	cmp.b	#$50,D2
-	dble	D2,.dvt1
+	dble	D2,dvt1
 	divu	#7,D0
 	swap	D0
 	move.b	D0,-(A0)
-.dvt_end	movem.l	(sp)+,d0-d3/a0-a1
-	rts
+dvt_end	rts
 
-******************************
+*****************************
 Do_It	move.l	STR(PC),d0	registry A0-A6/D0-D3 jsou volnÇ
 	move.l	B_structura(PC),d1
 	cmp.l	d0,d1
@@ -1811,8 +1631,6 @@ RemoveVBL	move.w	$454.w,d0		1) remove VBL
 ***************************************
 RemoveXBRA
 .loop	move.l	(a0),a1
-	cmp.w	#0,a1		seems like an XBRA is invalid (a1 = 0?)
-	beq.s	.end		since it's being killed at the next instruction with bus error #$FFFFFFF4
 	cmp.l	#XBRA,-12(a1)
 	bne.s	.end		bez XBRA jsem bezmocnò
 	cmp.l	#IDENTIFIER,-8(a1)
@@ -1845,11 +1663,8 @@ UninstallVectors
 	lea	$b8.w,a0
 	bsr.s	RemoveXBRA	6) odstanit XBIOS vektor
 
-	lea	$84.w,a0
-	bsr.s	RemoveXBRA	7) odstanit GEMDOS vektor
-
 	move.l	#IDENTIFIER,d0
-	bsr	RemoveCookie	8) odstranit CookieJar
+	bsr	RemoveCookie	7) odstranit CookieJar
 
 	move.w	(sp)+,sr		povolit p©eru®en°
 	rts
@@ -2040,30 +1855,21 @@ konec_video_testu
 	move.l	a1,(a0)		zapnut zrychlovaá my®i
 
 ****
-	lea	IKBD(a2),a0
+	lea	-4(a2),a0		-4 je undocumented
 	lea	ikbd_jmp(pc),a1
 	move.l	(a0),(a1)+
 	move.l	a1,(a0)		ikbdsys
 
 ****
-	btst	#_XBFixY2K,OnBoot1
+	btst	#_HookXBIOS-8,OnBoot
 	beq.s	.ne_xbios
-	
 	lea	$b8.w,a0
 	lea	xbios_jmp(pc),a1
 	move.l	(a0),(a1)+
 	move.l	a1,(a0)		XBIOS
 .ne_xbios
-	btst	#_GDSettime,OnBoot1
-	beq.s	.ne_gemdos
-
-	lea	$84.w,a0
-	lea	gemdos_jmp(pc),a1
-	move.l	(a0),(a1)+
-	move.l	a1,(a0)		GEMDOS
-.ne_gemdos
 ****
-	bsr	StartTime		uë áte Y2K opravenò áas
+	bsr	GetTime		uë áte Y2K opravenò áas
 
 	bsr	Sys_Init
 
@@ -2120,7 +1926,7 @@ showpos	dc.w	0		kladn† zprava, z†porn† zleva
 showcolb	dc.b	0		barva pozad° b°l†
 showcolf	dc.b	1		barva p°sma áern†
 *                           v       v
-OnBoot	dc.w	%1111100000000100	follow GEMDOS time (regardless of DTCOOKIE)
+OnBoot	dc.w	%1111100000000000
 OnBoot1	= OnBoot+1
 
 refresh	dc.w	REFRESH		ve VBL
@@ -2131,10 +1937,10 @@ normkbd	dc.b	0,27,'1234567890=',39,8,9,'qwertzuiop',26,'+',13,0,'asdfghjkl[]#',0
 	dc.b	0,0,0,0,0,0,0,'78',0,'-4',0,'6+',0,'2',0,'0',127,0,0,0,0,0,0,0,0,0,0,0,0,'>',0,0,'()/*7894561230.',13,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dc.b	0,27,'1234567890=',39,8,9,'QWERTZUIOP',26,'+',13,0,'ASDFGHJKL[]#',0,'~YXCVBNM,.-',0,0,0,' ',0,0,0,0,0,0
 	dc.b	0,0,0,0,0,0,0,0,0,0,'-',0,0,0,'+',0,0,0,0,127,0,0,0,0,0,0,0,0,0,0,0,0,'<',0,0,'()/*7894561230.',13,0,0,0,0,0,0,0,0,0,0,0,0,0
-* nasledujici tri tabulky maji po maximalne 15-ti parech hodnot ukoncenych parem[0,0] (tedy jsou 32 bajtu dlouhe)
-altkey	ds.w	ALT_LEN/2
-altshkey	ds.w	ALT_LEN/2
-altclkey	ds.w	ALT_LEN/2
+* nasledujici tri tabulky maji po maximalne 15-ti parech hodnot ukoncenych 0,0 (tedy jsou 32 bajtu dlouhe)
+altkey	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+altshkey	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+altclkey	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 cskbd	dc.b	0,27,'¢à®á©ëò†°Ç=',39,8,9,'qwertzuiop£É',13,0,'asdfghjklñü#',0,'~yxcvbnm,.-',0,0,0,' ',0,0,0,0,0,0
 	dc.b	0,0,0,0,0,0,0,0,0,0,'-',0,0,0,'+',0,0,0,0,127,0,0,0,0,0,0,0,0,0,0,0,0,'<',0,0,'()/*7894561230.',13,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -2142,10 +1948,10 @@ cskbd	dc.b	0,27,'¢à®á©ëò†°Ç=',39,8,9,'qwertzuiop£É',13,0,'asdfghjklñü#',0,'~yxcv
 	dc.b	0,0,0,0,0,0,0,'78',0,'_4',0,'6+',0,'2',0,'0',127,0,0,0,0,0,0,0,0,0,0,0,0,'>',0,0,'{}/*\[]$%&!"#=.',13,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dc.b	0,27,'ïâõÄûíùèãê=',39,8,9,'QWERTZUIOPóÖ',13,0,'ASDFGHJKL¶Ü#',0,'~YXCVBNM,.-',0,0,0,' ',0,0,0,0,0,0
 	dc.b	0,0,0,0,0,0,0,0,0,0,'-',0,0,0,'+',0,0,0,0,127,0,0,0,0,0,0,0,0,0,0,0,0,'<',0,0,'()/*7894561230.',13,0,0,0,0,0,0,0,0,0,0,0,0,0
-* nasledujici tri tabulky maji po maximalne 49-ti parech hodnot ukoncenych parem[0,0] (tedy jsou 100 bajtu dlouhe)
-altklav	ds.w	ALT_LEN/2
-altshklav	ds.w	ALT_LEN/2
-altclklav	ds.w	ALT_LEN/2
+* nasledujici tri tabulky maji po maximalne 15-ti parech hodnot ukoncenych 0,0
+altklav	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+altshklav	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+altclklav	dc.b	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 * 128 bajtu prekodovaci tabulky Kamenici->Latin2
 latina	dc.b	$ac,$81,$82,$d4,$84,$d2,$9b,$9f,$d8,$b7,$91,$d6,$96,$92,$8e,$b5
@@ -2199,11 +2005,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clockyø version 3.02  2000/11/26 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clockyø  version 3.00beta  2000/05/29 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clockyø verze 3.02  26.11.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clockyø  verze 3.00beta  29.05.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl°k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranàny.",13,10,0
 	endc
@@ -2272,19 +2078,15 @@ userstack	ds.l	1
 
 datum	ds.w	1
 d_v_t	ds.b	1
-
-roky	ds.b	1	tàchto 6 bajtñ mus° bòt p©esnà v tomto po©ad°
+roky	ds.b	1
 mesice	ds.b	1
 dny	ds.b	1
 hodiny	ds.b	1
 minuty	ds.b	1
 sekundy	ds.b	1
-
 mys_ok	ds.w	1
 adr_oldms	ds.l	1
 zal_hss	ds.w	1
-KukClk	ds.b	1
-zal_krep	ds.b	1
 orig_STacy_video	ds.b	1
 YY_sep_za	ds.b	1
 ampm	ds.b	1
