@@ -11,9 +11,11 @@
 #include "setclock.h"
 
 #ifndef FALSE
-#define FALSE	0
-#define TRUE	1
+#define TRUE	(1==1)
+#define FALSE	(!TRUE)
 #endif
+
+#define SETCLOCK_VERSION	0x311
 
 #include "jclkcook.h"
 
@@ -572,18 +574,23 @@ int objectnr_to_scancode2(int obj)
 	return scancode;
 }
 
-void nastav_znak_klavesnice(OBJECT *klavesnice, int scan, int ascii)
+int nastav_znak_klavesnice(OBJECT *klavesnice, int scan, int ascii)
 {
-	int orig_key = scancode_to_objectnr(scan);
-	if (klavesnice[orig_key].ob_type == G_BOXCHAR /* && ptr->ob_flags & TOUCHEXIT *//* SELECTABLE */ )
-		klavesnice[orig_key].ob_spec.obspec.character = ascii;
+	int object_key = scancode_to_objectnr(scan);
+	if (klavesnice[object_key].ob_type == G_BOXCHAR)
+		klavesnice[object_key].ob_spec.obspec.character = ascii;
+
+	return object_key;
 }
 
 void vymaz_znaky_klavesnice(OBJECT *klavesnice)
 {
 	int i;
-	for(i=1; i<SCAN_CODES; i++)
-		nastav_znak_klavesnice(klavesnice, i, ' ');
+	for(i=1; i<SCAN_CODES; i++) {
+		int obj = nastav_znak_klavesnice(klavesnice, i, ' ');
+		if (obj > 0 /*&& klavesnice[obj].ob_flags & SELECTABLE*/)
+			set_state(klavesnice, obj, SELECTED, FALSE);		/* unselect */
+	}
 }
 
 void newkbd(OBJECT *klavesnice, int shifts)
@@ -1447,8 +1454,9 @@ int vyber_klavesu(int orig_scancode, char *title)
 		{
 			case LAYOUT_OK :
 				new_scancode = orig_scancode;
+				close = TRUE;
+				break;
 
-				/* fallthrough */
 			case LAYOUT_CANCEL :
 				close = TRUE;
 				break;
@@ -1476,7 +1484,7 @@ int vyber_klavesu(int orig_scancode, char *title)
 
 					if (scancode != orig_scancode) {
 						/* deselect old */
-						if (layoutdial[orig_key].ob_type == G_BOXCHAR /* && ptr->ob_flags & TOUCHEXIT *//* SELECTABLE */ ) {
+						if (layoutdial[orig_key].ob_type == G_BOXCHAR) {
 							set_state(layoutdial, orig_key, SELECTED, FALSE);
 							redraw_mdobj(mdial, orig_key);
 						}
@@ -1535,8 +1543,9 @@ int vyber_klavesu2(int orig_scancode, char *title)
 		{
 			case EHC_OK :
 				new_scancode = orig_scancode;
+				close = TRUE;
+				break;
 
-				/* fallthrough */
 			case EHC_CANCEL :
 				close = TRUE;
 				break;
@@ -1613,10 +1622,6 @@ void editdead_dial(void)
 				show_help(DEADKEYS);
 				break;
 
-			case DEADKEYS_CANCEL :
-				close = TRUE;
-				break;
-
 			case DEADKEYS_OK :
 				jclk_config->deadkey = deadkey;
 				get_string(deadkeysdial, DK_NORMALNI, deadstr);
@@ -1629,7 +1634,11 @@ void editdead_dial(void)
 				get_string(deadkeysdial, DK_SHACKEM, deadstr);
 				strncpy(jclk_config->deadtable3, deadstr, defined);
 				jclk_config->deadkeys_defined = defined;
+				close = TRUE;
+				break;
 
+			case DEADKEYS_CANCEL :
+				close = TRUE;
 				break;
 		}
 		if (get_flag(deadkeysdial, exit_obj, EXIT))
@@ -1700,7 +1709,7 @@ int ehc_edit_dial(KAPP *client)
 						strcat(client->path, tmp);
 					}
 
-					switch(get_popup_item(ehceditdial, exit_obj, popups, POP_AVSTART)) {
+					switch(get_popup_item(ehceditdial, EHCEDIT_POP, popups, POP_AVSTART)) {
 						case PEHC_NOSUPP: starttyp = 0; break;
 						case PEHC_SUPPORTS:	starttyp = KAPPFL_VA_START; break;
 						case PEHC_REQUIRES:	starttyp = KAPPFL_VA_START | KAPPFL_VA_START_REQ; break;
@@ -1723,7 +1732,7 @@ int ehc_edit_dial(KAPP *client)
 				break;
 
 			case EHCEDIT_POP:
-				handle_popup(ehceditdial, exit_obj, popups, POP_AVSTART, POP_OPEN);
+				handle_popup(ehceditdial, EHCEDIT_POP, popups, POP_AVSTART, POP_OPEN);
 				break;
 
 			case EHCEDIT_APP:
@@ -2294,7 +2303,7 @@ int main( int argc, char *argv[] )
 {
 	// OBJECT	*tree;
 	char	tmp[80];
-	int		version = 0x310;
+	int		version = SETCLOCK_VERSION;
 	long *ssp;
 	short *syshdr;
 
