@@ -7,7 +7,7 @@
 
 struct _switches {
 	unsigned ShowTime:1;	/* 31 - General Display switch (bits 30-24 depend on this bit being set) */
-	unsigned ShowIDT:1;		/* 30 - Follow the International settings (date&time format) */
+	unsigned ShowIDT:1;		/* 30 - Follow the national settings (date&time format) */
 	unsigned ShowDate:1;	/* 29 - Display also the date line */
 	unsigned ShowDay:1;		/* 28 - Display Day of Week and special symbols */
 	unsigned ShowYear:1;	/* 27 - Display Year (two digits) and seconds */
@@ -42,7 +42,7 @@ struct _switches {
 };
 
 struct _bootsetup {
-	unsigned HookXBIOS:1;	/* 15 - */
+	unsigned unused3:1;		/* 15 - */
 	unsigned HookVBL:1;		/* 14 - */
 	unsigned HookKbd:1;		/* 13 - */
 	unsigned HookMouse:1;	/* 12 - */
@@ -52,7 +52,7 @@ struct _bootsetup {
 	unsigned unused1:3;
 	unsigned ResetEHC:1;	/* 4 - reset EHC table during AES restart */
 	unsigned FixY2K:1;		/* 3 - enables a workaround in XBIOS Gettime() that fixes an Y2K bug in older TOS */
-	unsigned Settime:1;		/* 2 - follow XBIOS Settime() for detecting date/time changes if DTCOOKIE is not installed */
+	unsigned Settime:1;		/* 2 - follow GEMDOS Tsettime()/Tsetdate for detecting date/time changes (even if DTCOOKIE is installed) */
 	unsigned EngSys:1;		/* 1 - simulate English TOS */
 	unsigned InvVideo:1;	/* 0 - invert colors on boot (white on black) */
 };

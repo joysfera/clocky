@@ -128,7 +128,7 @@
 
 #define MISC             8   /* Form/Dialog-box */
 #define ON_MEGATURBO     2   /* BUTTON in tree MISC */
-#define ON_INVCOLOR      3   /* BUTTON in tree MISC */
+#define ON_SIMUENG       3   /* BUTTON in tree MISC */
 #define ON_KEYCLICK      4   /* BUTTON in tree MISC */
 #define MISCPOP_ZVUKY    5   /* BOXTEXT in tree MISC */
 #define ON_PRINTCONV     6   /* BUTTON in tree MISC */
@@ -140,6 +140,7 @@
 #define KBDPOP_MOUSE     14  /* BOXTEXT in tree MISC */
 #define MISC_APPLY       15  /* BUTTON in tree MISC */
 #define ON_RESETEHC      16  /* BUTTON in tree MISC */
+#define ON_INVCOLOR      17  /* BUTTON in tree MISC */
 
 #define KONVERZE         9   /* Form/Dialog-box */
 #define KONVERZE_CANCEL  1   /* BUTTON in tree KONVERZE */

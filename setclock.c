@@ -15,7 +15,7 @@
 #define TRUE	1
 #endif
 
-#include "../distrib/source/jclkcook.h"
+#include "jclkcook.h"
 
 #define UBYTE				unsigned char
 
@@ -220,7 +220,7 @@ int load_data(const char *fname)
 
 	text_seg_len = *(long *)(clocky_buffer + 2);
 	jclk = (JCLKSTRUCT *)(clocky_buffer + 28 + text_seg_len);
-	
+
 	/* zkontroluj verzi */
 	if (jclk->name == CLOCKY_IDENT_NUM && jclk->version == JCLKSTRUCT_VERSION) {
 		jclk_config = jclk;
@@ -690,6 +690,9 @@ void misc_dial(void)
 	set_state(miscdial, ON_INVCOLOR, SELECTED, jclk_config->boot.InvVideo);
 	set_state(miscdial, ON_INVCOLOR, DISABLED, edit_resident_clocky);
 
+	set_state(miscdial, ON_SIMUENG, SELECTED, jclk_config->boot.EngSys);
+	set_state(miscdial, ON_SIMUENG, DISABLED, edit_resident_clocky);
+
 	set_state(miscdial, ON_RESETEHC, SELECTED, jclk_config->boot.ResetEHC);
 	set_state(miscdial, ON_RESETEHC, DISABLED, edit_resident_clocky);
 
@@ -735,6 +738,7 @@ void misc_dial(void)
 				}
 				jclk_config->switches.par.MiscTurbo = get_state(miscdial, ON_MEGATURBO, SELECTED);
 				jclk_config->boot.InvVideo = get_state(miscdial, ON_INVCOLOR, SELECTED);
+				jclk_config->boot.EngSys = get_state(miscdial, ON_SIMUENG, SELECTED);
 				jclk_config->boot.ResetEHC = get_state(miscdial, ON_RESETEHC, SELECTED);
 				jclk_config->refresh = get_int(miscdial, AFTER_GEM_START);
 
@@ -1643,7 +1647,7 @@ int ehc_edit_dial(KAPP *client)
 	int ret = FALSE;
 	int	exit_obj;
 	int dblclick;
-	int starttyp; 
+	int starttyp;
 	char cesta[2*MAXPATH], cmdline[MAXPATH], *cmdp;
 
 	if (client == NULL)
@@ -1744,7 +1748,7 @@ int ehc_edit_dial(KAPP *client)
 					}
 					else
 						*ehcfname = '\0';		/* make it empty */
-					
+
 					set_string(ehceditdial, exit_obj, ehcfname);
 				}
 				break;
@@ -2181,7 +2185,7 @@ void print_informations(int x, int y, GRECT redrawsize)
 	vst_color(vdi_handle, 1);
 
 	for(i=0; i<4; i++) {
-		v_gtext(vdi_handle, x+4, y, infos[i]); 
+		v_gtext(vdi_handle, x+4, y, infos[i]);
 		y+=chb;
 	}
 }
@@ -2190,7 +2194,7 @@ void redraw_win(int handle, int xc, int yc, int wc, int hc)
 {
 	GRECT	t1,t2;
 	int	temp[4];
-	
+
 	collect_infos();
 
 	hide_mouse();
@@ -2221,7 +2225,7 @@ void open_win(void)
 {
 	int	work_out[57];
 	GRECT	r = {10, 50, 620, 150};
-		
+
 	vdi_handle = open_vwork(work_out);
 	win_handle = wind_create_grect((NAME|MOVER|CLOSER|SIZER), &gl_desk);
 	set_window_name(" SetClock ");
@@ -2478,7 +2482,7 @@ int main( int argc, char *argv[] )
 	wind_close(win_handle);
 	wind_delete(win_handle);
 	v_clsvwk(vdi_handle);
-	
+
 	delete_menu();
 	exit_app(0);
 #ifdef DEBUG

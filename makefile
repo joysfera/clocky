@@ -14,10 +14,10 @@ OBJS = $(subst .c,.o,$(SRCS))
 
 all: $(PROG)
 
-$(PROG): $(OBJS) setclock.h ../distrib/source/jclkcook.h /usr/local/lib/libcflib.a
+$(PROG): $(OBJS) setclock.h /usr/local/lib/libcflib.a
 	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
-.c.o: $(SRCS) setclock.h ../distrib/source/jclkcook.h /usr/local/include/cflib.h
+.c.o: $(SRCS) setclock.h /usr/local/include/cflib.h
 	$(CC) $(CFLAGS) $(DEFS) -c $<
 
 clean:
