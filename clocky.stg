@@ -1,10 +1,10 @@
 @author "Petr Stehlik"
 @database "all-in-one utility"
 @subject "Documentation/Utilities"
-@$VER: Clocky.hyp 1.2.2 (24.11.00)
+@$VER: Clocky.hyp 1.2.2 (12.10.00)
 
 @node main "Clocky 3.02"
-@{B}Clocky¿ 3.02                                                2000/11/26@{b}
+@{B}Clocky¿ 3.02                                                2000/12/10@{b}
 @line 1 70 0 0 1
 
        What is Clocky? It's a very useful all-in-one multiutility for Atari
@@ -353,8 +353,9 @@
 
     ù You might consider installing DTCOOKIE.PRG. This program creates
       two cookies that hold pointers to current system date and time.
-      Clocky then reads this time and you need not to allow the XBIOS
-      patch.
+      Clocky then reads this time and you need not to allow the GEMDOS
+      hook. If you use MiNT with timezones then please start
+      DTCOOKIE.PRG after MiNT (or from MINT.CNF).
 
 
 @endnode
@@ -599,8 +600,8 @@ will see...
 
        If you don't have DTCOOKIE installed Clocky can still follow any
        changes you made to system time and date. Simply check this box
-       and Clocky will hook on the XBIOS vector. Though I personally
-       still prefer DTCOOKIE...
+       and Clocky will hook on the GEMDOS vector and will watch the
+       Tsettime/Tsetdate calls.
 
    ù Quick time display
 
@@ -973,7 +974,7 @@ Change internal Clocky's hotkeys here.
  'TIME'. Their values points to those system variables.
  Clocky just searchs for these Cookies and if found,
  Clocky is able to detect any system time/date change
- immediately even without hooking on the XBIOS vector.
+ immediately even without hooking on the GEMDOS vector.
 
  Please note that 'TIME' and 'DATE' Cookies are installed
  also by other programs, such as GEMDOS replacement called
