@@ -107,15 +107,15 @@ kbd_jmp	dc.l	0
 my_kbd	tst.b	d0
 	bmi	.kbd_rts		pro released key do nothing
 
-	movem.l	a0-a1/d1-d2,-(A7)	first my KBD routine
+	movem.l	a0/d1-d2,-(A7)	first my KBD routine
 	
 	move.l	kbshift(PC),a0
+	move.b	(a0),d2
+	and.b	#%01111,d2	zapomen na CapsLock
 
 * zde se vyhodnocuj¡ intern¡ hotkeje Clock–
 	move.b	hotshift(PC),d1	jsou povolen‚ intern¡ hotkeje Clock–?
 	beq	.ehc		0 = nepovolen‚
-	move.b	(a0),d2
-	and.b	#%01111,d2	zapomen na CapsLock
 	cmp.b	d1,d2		dr‘¡m kombinaci pro hotkey?
 	bne	.ehc
 
@@ -144,9 +144,9 @@ my_kbd	tst.b	d0
 	bra	.vyhodznak
 *---
 .hotcyklus
-	lea	hotkeje(PC),a1
+	lea	hotkeje(PC),a0
 	moveq	#8,d1		hotkeje kontroluju odzadu
-.hotk1	cmp.b	(a1,d1),d0
+.hotk1	cmp.b	(a0,d1),d0
 	dbeq	d1,.hotk1
 	tst	d1
 	bmi.s	.ehc		‘ dn  z hork˜ch kl ves
@@ -176,31 +176,30 @@ my_kbd	tst.b	d0
 .ehc	btst	#_KbdEHC-16,_KBD	vybirat EH z hn¡zda?
 	beq.s	.kbd_ret
 
-	lea	ehc_scantable(PC),a1
-	tst.b	(a1,d0)		je tato kl vesa registrov na ?
+	lea	ehc_scantable(PC),a0
+	tst.b	(a0,d0)		je tato kl vesa registrov na ?
 	beq.s	.kbd_ret
 
-	lea	128(a1),a1	druh  polovina EHC tabulky
-	move.b	(a0),d1		p©e‡ti KbShift
-	btst	#1,(a1,d0)	zkus flag pro SHIFT_ALLOWED
+	lea	128(a0),a0	druh  polovina EHC tabulky
+	btst	#1,(a0,d0)	zkus flag pro SHIFT_ALLOWED
 	beq.s	.shall
-	and.b	#%1100,d1		nech jen Alt+Control
-.shall	cmp.b	#%1100,d1		porovnej s Alt+Control
+	and.b	#%1100,d2		nech jen Alt+Control
+.shall	cmp.b	#%1100,d2		porovnej s Alt+Control
 	bne.s	.kbd_ret
 
 	move.b	d0,act_key	zap¡¨u scancode pr vˆ stisknut‚ kl vesy do actual_key
 	move.b	(a0),act_shift	zap¡¨u stav p©e©azova‡–
 
-	btst	#0,(a1,d0)	zkus flag pro PASS_THROUGH
+	btst	#0,(a0,d0)	zkus flag pro PASS_THROUGH
 	bne.s	.kbd_ret
 	bra.s	.vyhodznak	a vyhodim z bufru
 
 
-.kbd_ret	movem.l	(SP)+,a0-a1/d1-d2
+.kbd_ret	movem.l	(SP)+,a0/d1-d2
 .kbd_rts	move.l	kbd_jmp(pc),-(sp)	then continue with the original kbd_key handler
 	rts
 
-.vyhodznak	movem.l	(SP)+,a0-a1/d1-d2
+.vyhodznak	movem.l	(SP)+,a0/d1-d2
 	rts
 
 *************************************************
@@ -2162,11 +2161,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.10  2000/06/24 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.10beta  2000/06/25 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.10  24.06.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.10beta  25.06.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
