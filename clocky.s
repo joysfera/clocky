@@ -378,13 +378,22 @@ mouse_jmp	dc.l	0
 	btst	#_Miscmys-8,_MSC
 	beq.s	mouse_ret
 	movem.l	a0-a1/d0-d1,-(a7)
-	lea	casovac(pc),a1
 	move.b	(a0)+,d0
 	cmpi.b	#$F8,d0		$F8 je my¨ bez tla‡¡tek
 	bmi.s	nezrychli
 	cmpi.b	#$FB,d0		$FB je my¨ s obˆma tla‡¡tky
 	bgt.s	nezrychli
+	
+*** aranym ***
+	move.l	linea,d1
+	beq.s	.nicnebude
+	move.l	d1,a1
+	move.w	-602(a1),$f9000e
+	move.w	-600(a1),$f90010
+.nicnebude
+**************
 	move.l	_hz_200\w,d1
+	lea	casovac(pc),a1
 	sub.l	(a1),d1
 	move.l	_hz_200\w,(a1)	rozd¡l od posledn¡ ud losti my¨i
 	subq.l	#3,d1
@@ -1690,6 +1699,7 @@ Simulate_English_TOS
 *****************************
 Sys_Init	movem.l	D0-D2/A0-A2,-(SP)
 	dc	$A000		LineA
+	move.l	a0,linea
 	move	(a0),d1
 	move.w	d1,bitplanes
 	move	-2(a0),d0
@@ -1723,7 +1733,18 @@ Sys_Init	movem.l	D0-D2/A0-A2,-(SP)
 	beq.s	sys_konec
 	bsr	invertuj
 
-sys_konec	movem.l	(SP)+,D0-D2/A0-A2
+sys_konec
+**** aranym
+	lea	$f90000,a0
+	cmp.l	#$5F415241,(a0)+
+	bne.s	nulujlinea
+	cmp.w	#$0000,(a0)
+	beq.s	okok
+nulujlinea
+	clr.l	linea
+okok	
+**** konec aranymu
+	movem.l	(SP)+,D0-D2/A0-A2
 	rts
 ***************************************
 GetCookie	movem.l	D1-D2/A0,getcookie_regs
@@ -2199,7 +2220,7 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/26 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ for Aranym 2001/09/19 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
@@ -2296,6 +2317,7 @@ tut_wait	ds.w	1	cekani
 
 Bkg_regs	ds.l	8
 getcookie_regs	ds.l	3
+linea	ds.l	1
 
 	even
 ehc_scantable
