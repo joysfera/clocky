@@ -2291,11 +2291,23 @@ int main( int argc, char *argv[] )
 	// OBJECT	*tree;
 	char	tmp[80];
 	int		version = 0x310;
-	long *ssp = (long *)Super(0L);
-	short *syshdr = *(short **)0x4f2UL;
+	long *ssp;
+	short *syshdr;
+
+#ifdef DEBUG
+	debug_init("SETCLOCK", Datei, "setclock.log");
+#endif
+
+	debug("Begin:\n");
+	ssp = (long *)Super(0L);
+	debug("In Super(0L)\n");
+	syshdr = *(short **)0x4f2UL;
+	debug("After syshdr\n");
 	Super(ssp);
+	debug("In Usermode again\n");
 
 	OS_version = syshdr[1];
+	debug("OS_version read\n");
 
 	// CHECK_CLOCKY_STRUCT;
 
@@ -2306,16 +2318,22 @@ int main( int argc, char *argv[] )
 		root_drive = 'A';
 	}
 	clkpath[0] = root_drive;
+	debug("root drive set\n");
 
-	if (argc == 2 && argv[1] != NULL)
+	if (argc == 2 && argv[1] != NULL) {
 		strcpy( clkfname, argv[1] );
+		debug("cmdline arg copied\n");
+	}
 
 	getcwd(kbdpath, sizeof(kbdpath)-5);
+	debug("cwd read\n");
 
 	homedir = getenv("HOME");
+	debug("$HOME = '%s'\n", homedir);
 	if (homedir != NULL && path_exists(homedir)) {
 		strcpy(homedefaultsdir, homedir);
 		strcat(homedefaultsdir, "\\defaults");
+		debug("path_exists(%s)\n", homedefaultsdir);
 		if (! path_exists(homedefaultsdir))
 			homedefaultsdir = NULL;
 	}
@@ -2323,11 +2341,14 @@ int main( int argc, char *argv[] )
 		homedir = NULL;
 
 	/* RSC init */
+	debug("before RSC read\n");
 	init_app("setclock.rsc");
+	debug("RSC read succesfully\n");
 
 	if (gl_naes)
 		menu_register(gl_apid, "  SetClock IIIø");
 
+	debug("Before RSC init\n");
 	rsrc_gaddr(R_TREE, MENUTREE, &menu);
 	create_menu(menu);
 //	menu_icheck(menu, MMODAL, modal);
@@ -2397,18 +2418,28 @@ int main( int argc, char *argv[] )
 	fix_dial(inthotkeysdial);
 
 	/* RSC init END */
+	debug("After RSC init\n");
 
 	/* Callback fÅr modale Fensterdialoge, Fenster-Alerts usw. */
 	set_mdial_wincb(handle_msg);
+	debug("Callback set\n");
 
 	open_win();
+	debug("Main Window opened\n");
 
 	set_asciitable_strings("Choose a char", "Cancel");
+	debug("ASCII table set\n");
 
-	if (*clkfname)
+	if (*clkfname) {
+		debug("Before load_data\n");
 		load_data(clkfname);		/* zkus nacist co je na prikazove radce */
-	if (!clocky_in_buffer)
+		debug("After load_data\n");
+	}
+	if (!clocky_in_buffer) {
+		debug("Before read_resident\n");
 		read_resident_data(TRUE);
+		debug("After read_resident\n");
+	}
 
 	quit = FALSE;
 
@@ -2450,5 +2481,8 @@ int main( int argc, char *argv[] )
 	
 	delete_menu();
 	exit_app(0);
+#ifdef DEBUG
+	debug_exit();
+#endif
 	return 0;
 }
