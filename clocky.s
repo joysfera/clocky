@@ -102,67 +102,42 @@ ikbd_jmp	dc.l	0
 
 my_ikbd	tst.b	d0
 	bmi	ikbd_rts		pro released key do nothing
+
+	movem.l	a0-a1/d1-d2,-(A7)	first my IKBD routine
 	
 	bsr	roznout		klavesnice vzdy rozne obraz
 
-	movem.l	a0-a2/d1-d4,-(A7)	first my IKBD routine
 	move.l	kbshift(PC),a0
 
-* zde za‡¡naj¡ extern¡ hotkeje
-	btst	#_KbdEHC-16,_KBD	vybirat EH z hn¡zda?
-	beq.s	prijety
-
-	lea	ehc_scantable(PC),a1
-	tst.b	(a1,d0)		je tato kl vesa registrov na ?
-	beq.s	prijety
-
-	lea	128(a1),a1	druh  polovina EHC tabulky
-	move.b	(a0),d1		p©e‡ti KbShift
-	btst	#1,(a1,d0)	zkus flag pro SHIFT_ALLOWED
-	beq.s	.shall
-	and.b	#%1100,d1		nech jen Alt+Control
-.shall	cmp.b	#%1100,d1		porovnej s Alt+Control
-	bne.s	prijety
-
-	move.b	d0,act_key	zap¡¨u scancode pr vˆ stisknut‚ kl vesy do actual_key
-	move.b	(a0),act_shift	zap¡¨u stav p©e©azova‡–
-
-	btst	#0,(a1,d0)	zkus flag pro PASS_THROUGH
-	bne	ikbd_ret
-	bra	vyhodznak		a vyhodim z bufru
-
-* zde se vyhodnocuj¡ hotkeje Clock–
-prijety	move.b	hotshift(PC),d1	jsou povolen‚ intern¡ hotkeje Clock–?
-	beq	ikbd3		0 = nepovolen‚
+* zde se vyhodnocuj¡ intern¡ hotkeje Clock–
+	move.b	hotshift(PC),d1	jsou povolen‚ intern¡ hotkeje Clock–?
+	beq	ehc		0 = nepovolen‚
 	cmp.b	(a0),d1		dr‘¡m kombinaci pro hotkey?
-	bne	ikbd3
+	bne	ehc
 
-**********************************************************************
-*** Hork‚ kl vesy (scancode v D3) - vyhodnocen¡
-**********************************************************************
 	tst.b	is_megae		Turbo jen pro MegaSTE!
 	beq.s	.hotzamegou
 	cmp.b	turbo_on,d0	'+' on numeric pad
 	bne.s	.hot1
 	bset	#_Miscturb-8,_MSC	Turbo ON
-	bra.s	hot_end
+	bra	vyhodznak
 *---
 .hot1	cmp.b	turbo_off,d0	'-' on numeric pad
 	bne.s	.hotzamegou
 	bclr	#_Miscturb-8,_MSC	Turbo OFF
-	bra.s	hot_end
+	bra	vyhodznak
 *---
 .hotzamegou
 	cmp.b	hotk_inv,d0	'B'
 	bne.s	.hot2
 	bsr	invertuj
-	bra.s	hot_end
+	bra	vyhodznak
 *---
 .hot2	cmp.b	hotk_klik,d0	'K'
 	bne.s	.hotcyklus
 	move.b	klikmask(PC),d1
 	eor.b	d1,conterm\w
-	bra.s	hot_end
+	bra	vyhodznak
 *---
 .hotcyklus
 	lea	hotkeje(PC),a1
@@ -170,70 +145,58 @@ prijety	move.b	hotshift(PC),d1	jsou povolen‚ intern¡ hotkeje Clock–?
 hotk1	cmp.b	(a1,d1),d0
 	dbeq	d1,hotk1
 	tst	d1
-	bmi	ikbd_ret		‘ dn  z hork˜ch kl ves
+	bmi.s	ehc		‘ dn  z hork˜ch kl ves
 
-*********************************
-*--- je to jedna z horkych klaves
-
+;--- je to jedna z horkych klaves
 	move.w	d1,d2
 	subq.w	#5,d2		O = 1, N = 2, C = 3
 	ble.s	hotk3
 	and.b	#%11111100,_KBD
 	and.b	#%00000011,d2
 	or.b	d2,_KBD		zap¡¨u zmˆnu kl vesnice
-	bra.s	hot_end
+	bra.s	vyhodznak
 *---
 hotk3	moveq	#0,d2
 	move.b	hotbity(PC,d1),d2
 	move.l	STR(PC),d1
 	bchg	d2,d1
 	move.l	d1,STR
+	bra.s	vyhodznak
 
-hot_end	bra	vyhodznak
 *		 0   1   2   3   4   5   6   7   8
 *                   'T','D','A','S','M','L','O','N','C'
 *		$14,$20,$1E,$1F,$32,$26,$18,$31,$2E
 hotbity	dc.b	_ShowTime,_Kbddead,_Kbdasci,_Saveron,_Miscmys,_Miscprnt
 
-***************************************************************
-* Alt-klavesy
-ikbd3	btst	#_KbdAltK-16,_KBD
-	beq.s	ikbd4
-	tst.b	extended_kbd	pokud je to jiz v BIOSu tak nedelat
-	bne.s	ikbd4
-	move.b	(a0),d1		znovunacist kvuli CapsLocku
-	btst	#3,d1		dr‘¡m si Alt ?
-	beq.s	ikbd4
+* zde za‡¡naj¡ extern¡ hotkeje
+ehc	btst	#_KbdEHC-16,_KBD	vybirat EH z hn¡zda?
+	beq.s	ikbd_ret
 
-	move.b	_KBD(PC),d2
-	and.b	#%11,d2		jen typ kl vesnice
-	cmp.b	#2,d2
-	beq.s	.normal
-	cmp.b	#3,d2
-	bne.s	ikbd4
-	lea	altklav(PC),a1
-	bra.s	.zanorm
-.normal	lea	altkey(PC),a1
-.zanorm	btst	#4,d1		je CapsLock?
-	beq.s	.necaps
-	lea	2*32(a1),a1
-	bra.s	.smycka
-.necaps	and.b	#%0011,d1		nˆkter˜ z Shift–?
-	beq.s	.smycka
-	lea	32(a1),a1
-.smycka	moveq	#30-1,d2
-.loop	subq	#1,d2		SCAN na sud˜ch pozic¡ch
-	cmp.b	(a1,d2),d0
-	dbeq	d2,.loop
-	tst	d2
-	bmi.s	ikbd4		‘ dn  z Alt kl ves
-	move.b	1(a1,d2),d0	vyt hni z tabulky Alt znak
-ikbd4
-ikbd_ret	movem.l	(SP)+,a0-a2/d1-d4
+	lea	ehc_scantable(PC),a1
+	tst.b	(a1,d0)		je tato kl vesa registrov na ?
+	beq.s	ikbd_ret
+
+	lea	128(a1),a1	druh  polovina EHC tabulky
+	move.b	(a0),d1		p©e‡ti KbShift
+	btst	#1,(a1,d0)	zkus flag pro SHIFT_ALLOWED
+	beq.s	.shall
+	and.b	#%1100,d1		nech jen Alt+Control
+.shall	cmp.b	#%1100,d1		porovnej s Alt+Control
+	bne.s	ikbd_ret
+
+	move.b	d0,act_key	zap¡¨u scancode pr vˆ stisknut‚ kl vesy do actual_key
+	move.b	(a0),act_shift	zap¡¨u stav p©e©azova‡–
+
+	btst	#0,(a1,d0)	zkus flag pro PASS_THROUGH
+	bne.s	ikbd_ret
+	bra.s	vyhodznak		a vyhodim z bufru
+
+
+ikbd_ret	movem.l	(SP)+,a0-a1/d1-d2
 ikbd_rts	move.l	ikbd_jmp(pc),-(sp)	then continue with original ikbd_key handler
 	rts
 
-vyhodznak	movem.l	(SP)+,a0-a2/d1-d4
+vyhodznak	movem.l	(SP)+,a0-a1/d1-d2
 	rts
 
 ***************************************
@@ -2008,11 +1971,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿  version 3.10beta  2000/05/29 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿  version 4.00beta  2000/05/30 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿  verze 3.10beta  29.05.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿  verze 4.00beta  30.05.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
