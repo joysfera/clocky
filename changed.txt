@@ -94,6 +94,11 @@
 
 19.6.00:  doplnen ResetEHC
 
+24.11.00: editor mrtvych klaves uz jde zavrit klikem na OK.
+          V editoru internich hotkeju uz nezustavaji predselectovane
+          vsechny mozne klavesy z predchoziho volani ehc editoru.
+          VA_START v ehc_edit_dialu uz funguje korektne.
+
 - automaticky refreshovat ka‘dou sekundu, kontrolovat st le jsou-li Clocky
   u‘ rezidentn¡ (povolit polo‘ku v menu) anebo u‘ naopak nejsou (pokud
   edituju rezident, tak odej¡t £plnˆ, jinak jen zak zat polo‘ku).
