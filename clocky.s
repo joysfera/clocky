@@ -1374,10 +1374,11 @@ SaveBend	moveq	#1,d0		smazat ZERO flag, protoze jsme zalohovali
 ***************************************
 	dc.l	XBRA,IDENTIFIER
 xbios_jmp	dc.l	0
+	move.l	a0,-(sp)
 	move.l	usp,a0
-	btst	#5,(sp)
+	btst	#5,4(sp)
 	beq.s	.nesup
-	lea	6(sp),a0
+	lea	10(sp),a0
 	tst.w	_longframe\w
 	beq.s	.nesup
 	addq.l	#2,a0
@@ -1390,8 +1391,10 @@ xbios_jmp	dc.l	0
 	move.l	2(sp),navrat
 	move.l	#xbios_Gettime,2(sp)	return address
 
-.xb_end	move.l	xbios_jmp,a0
-	jmp	(a0)
+.xb_end	move.l	(sp)+,a0
+	move.l	xbios_jmp,-(sp)
+	rts
+
 navrat	dc.l	0
 
 xbios_Gettime:
@@ -1405,16 +1408,17 @@ xbios_Gettime:
 
 .xbios_y2k_ok:
 	move.l	(sp)+,d1
-	move.l	navrat(PC),-(sp)
+	move.l	navrat(pc),-(sp)
 	rts
 
 ***************************************
 	dc.l	XBRA,IDENTIFIER
 gemdos_jmp	dc.l	0
+	movem.l	a0/d0,-(sp)
 	move.l	usp,a0
-	btst	#5,(sp)
+	btst	#5,8(sp)
 	beq.s	.nesup
-	lea	6(sp),a0
+	lea	14(sp),a0
 	tst.w	_longframe\w
 	beq.s	.nesup
 	addq.l	#2,a0
@@ -1435,8 +1439,9 @@ gemdos_jmp	dc.l	0
 	move.w	2(a0),d0
 	bsr.s	Prepar_datum
 
-.end	move.l	xbios_jmp,a0
-	jmp	(a0)
+.end	movem.l	(sp)+,a0/d0
+	move.l	gemdos_jmp,-(sp)
+	rts
 
 ***************************************
 StartTime	movem.l	A0-A3/D0-D3,-(sp)	registry zni‡¡ GEMDOS
@@ -2053,7 +2058,7 @@ konec_video_testu
 	lea	$84.w,a0
 	lea	gemdos_jmp(pc),a1
 	move.l	(a0),(a1)+
-	move.l	a1,(a0)		XBIOS
+	move.l	a1,(a0)		GEMDOS
 .ne_xbios
 ****
 	bsr	StartTime		u‘ ‡te Y2K opraven˜ ‡as
@@ -2192,11 +2197,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/22 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/23 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.02  22.11.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.02  23.11.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
