@@ -99,6 +99,10 @@
           vsechny mozne klavesy z predchoziho volani ehc editoru.
           VA_START v ehc_edit_dialu uz funguje korektne.
 
+10.12.00: strasna SMRT nalezena a opravena - pokud bylo nastaveno $HOME,
+          tak jsem delal strcat do cizi pameti (ostuda!). Proto to vsem
+          padalo.
+
 - automaticky refreshovat ka‘dou sekundu, kontrolovat st le jsou-li Clocky
   u‘ rezidentn¡ (povolit polo‘ku v menu) anebo u‘ naopak nejsou (pokud
   edituju rezident, tak odej¡t £plnˆ, jinak jen zak zat polo‘ku).

@@ -15,7 +15,7 @@
 #define FALSE	(!TRUE)
 #endif
 
-#define SETCLOCK_VERSION	0x311
+#define SETCLOCK_VERSION	0x312
 
 #include "jclkcook.h"
 
@@ -54,7 +54,7 @@ char	clkpath[MAXDIR] = CLOCKPATH, clkname[MAXNAME] = CLOCKNAME, clkfname[MAXPATH
 char	kbdpath[MAXDIR], kbdname[MAXNAME]="", kbdfname[MAXPATH] = "";
 char	jclktoolsetpath[MAXPATH] = "";
 char	ehcpath[MAXPATH] = "", ehcname[MAXPATH] = "", ehcfname[MAXPATH] = "";
-char	*homedir = NULL, *homedefaultsdir = NULL;
+char	homedir[MAXPATH] = "", homedefaultsdir[MAXPATH] = "";
 
 #define TOTALKBDLEN			(KBDLEN + 3*ALT_LEN)
 UBYTE tmp_kbd[TOTALKBDLEN];
@@ -97,6 +97,20 @@ void ehc_dial(void);
 void icc_dial(void);
 
 /* --------------------------------------------------------------------------- */
+
+char *addseparator(char *path)
+{
+	int len;
+	
+	if (path == NULL)
+		return NULL;
+		
+	len = strlen(path);
+	if (len == 0 || (path[len-1] != '\\' && path[len-1] != '/'))
+		strcat(path, "\\");
+
+	return path;
+}
 
 void collect_infos(void)
 {
@@ -1790,21 +1804,22 @@ void ehc_dial(void)
 		return;
 
 	/* load */
-	if (homedefaultsdir) {
+	if (strlen(homedefaultsdir) > 0) {
 		strcpy(jclktoolsetpath, homedefaultsdir);
-		strcat(jclktoolsetpath, "\\"JCLKTOOLSETNAME);
+		strcat(jclktoolsetpath, JCLKTOOLSETNAME);
 		exists = file_exists(jclktoolsetpath);
 	}
 
 	if (!exists && homedir) {
 		strcpy(jclktoolsetpath, homedir);
-		strcat(jclktoolsetpath, "\\"JCLKTOOLSETNAME);
+		strcat(jclktoolsetpath, JCLKTOOLSETNAME);
 		exists = file_exists(jclktoolsetpath);
 	}
 
 	if (!exists) {
-		strcpy(jclktoolsetpath, "C:\\"JCLKTOOLSETNAME);
+		strcpy(jclktoolsetpath, "C:\\");
 		jclktoolsetpath[0] = root_drive;
+		strcat(jclktoolsetpath, JCLKTOOLSETNAME);
 		exists = file_exists(jclktoolsetpath);
 	}
 
@@ -1836,17 +1851,18 @@ void ehc_dial(void)
 		fclose(f);
 	}
 	else {
-		if (homedefaultsdir != NULL && path_exists(homedefaultsdir)) {
+		if (strlen(homedefaultsdir) > 0 && path_exists(homedefaultsdir)) {
 			strcpy(jclktoolsetpath, homedefaultsdir);
-			strcat(jclktoolsetpath, "\\"JCLKTOOLSETNAME);
+			strcat(jclktoolsetpath, JCLKTOOLSETNAME);
 		}
 		else if (homedir != NULL && path_exists(homedir)) {
-			strcpy(jclktoolsetpath, homedefaultsdir);
-			strcat(jclktoolsetpath, "\\"JCLKTOOLSETNAME);
+			strcpy(jclktoolsetpath, homedir);
+			strcat(jclktoolsetpath, JCLKTOOLSETNAME);
 		}
 		else {
-			strcpy(jclktoolsetpath, "C:\\"JCLKTOOLSETNAME);
+			strcpy(jclktoolsetpath, "C:\\");
 			jclktoolsetpath[0] = root_drive;
+			strcpy(jclktoolsetpath, JCLKTOOLSETNAME);
 		}
 		do_walert(1, 0, "[1][JCLKTOOL.SET not found. |Will be created.][OK]", "New JCLKTOOL.SET");
 	}
@@ -2306,6 +2322,7 @@ int main( int argc, char *argv[] )
 	int		version = SETCLOCK_VERSION;
 	long *ssp;
 	short *syshdr;
+	char *homeptr = NULL;
 
 #ifdef DEBUG
 	debug_init("SETCLOCK", Datei, "setclock.log");
@@ -2341,17 +2358,21 @@ int main( int argc, char *argv[] )
 	getcwd(kbdpath, sizeof(kbdpath)-5);
 	debug("cwd read\n");
 
-	homedir = getenv("HOME");
-	debug("$HOME = '%s'\n", homedir);
-	if (homedir != NULL && path_exists(homedir)) {
-		strcpy(homedefaultsdir, homedir);
-		strcat(homedefaultsdir, "\\defaults");
-		debug("path_exists(%s)\n", homedefaultsdir);
-		if (! path_exists(homedefaultsdir))
-			homedefaultsdir = NULL;
+	homeptr = getenv("HOME");
+	if (homeptr != NULL) {
+		strcpy(homedir, homeptr);
+		addseparator(homedir);
+		debug("$HOME = '%s'\n", homedir);
+		if (path_exists(homedir)) {
+			strcpy(homedefaultsdir, homedir);
+			strcat(homedefaultsdir, "defaults");
+			addseparator(homedefaultsdir);
+			if (! path_exists(homedefaultsdir))
+				*homedefaultsdir = EOS;
+		}
+		else
+			*homedir = EOS;
 	}
-	else
-		homedir = NULL;
 
 	/* RSC init */
 	debug("before RSC read\n");
