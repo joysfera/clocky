@@ -50,7 +50,6 @@ _HookPrint= 11	povˆsit se na Print a t¡m umo‘nit konverzi
 _HookMouse= 12	povˆsit se na Mouse a t¡m umo‘nit zrychlova‡
 _HookKbd	= 13	povˆsit se na KbdVec a t¡m umo‘nit hork‚/EHC/Alt/dead kl vesy
 _HookVBL	= 14	povˆsit se na VBL a umo‘nit t¡m zobrazov n¡ ‡asu
-_HookXBIOS= 15	povˆsit se na XBIOS
 
 * verejna struktura Joy Clocku, na kterou ukazuje CookieJar('JCLK') *
 *-------------------------------------------------------------------*
@@ -1383,9 +1382,6 @@ xbios_jmp	dc.l	0
 	beq.s	.nesup
 	addq.l	#2,a0
 .nesup
-	btst	#_XBFixY2K,OnBoot1
-	beq.s	.xb_end
-
 	cmp.w	#23,(a0)		Gettime
 	bne.s	.xb_end
 	move.l	2(sp),navrat
@@ -1423,9 +1419,6 @@ gemdos_jmp	dc.l	0
 	beq.s	.nesup
 	addq.l	#2,a0
 .nesup
-	btst	#_GDSettime,OnBoot1
-	beq.s	.end
-
 	cmp.w	#$2d,(a0)		Tsettime
 	bne.s	.tdat
 ; ulo‘ si pr vˆ zmˆnˆn˜ ‡as
@@ -1850,8 +1843,11 @@ UninstallVectors
 	lea	$b8.w,a0
 	bsr.s	RemoveXBRA	6) odstanit XBIOS vektor
 
+	lea	$84.w,a0
+	bsr.s	RemoveXBRA	7) odstanit GEMDOS vektor
+
 	move.l	#IDENTIFIER,d0
-	bsr	RemoveCookie	7) odstranit CookieJar
+	bsr	RemoveCookie	8) odstranit CookieJar
 
 	move.w	(sp)+,sr		povolit p©eru¨en¡
 	rts
@@ -2048,18 +2044,22 @@ konec_video_testu
 	move.l	a1,(a0)		ikbdsys
 
 ****
-	btst	#_HookXBIOS-8,OnBoot
+	btst	#_XBFixY2K,OnBoot1
 	beq.s	.ne_xbios
+	
 	lea	$b8.w,a0
 	lea	xbios_jmp(pc),a1
 	move.l	(a0),(a1)+
 	move.l	a1,(a0)		XBIOS
+.ne_xbios
+	btst	#_GDSettime,OnBoot1
+	beq.s	.ne_gemdos
 
 	lea	$84.w,a0
 	lea	gemdos_jmp(pc),a1
 	move.l	(a0),(a1)+
 	move.l	a1,(a0)		GEMDOS
-.ne_xbios
+.ne_gemdos
 ****
 	bsr	StartTime		u‘ ‡te Y2K opraven˜ ‡as
 
@@ -2197,11 +2197,11 @@ tut_table	dc.w	$7D,$100		set channel A frequency to 1000 Hz
 tut_tab_end:
 
 	ifne	ENGLISH
-infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/23 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ version 3.02  2000/11/24 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehlik",13,10,10,0
 unintext	dc.b	"Clocky has been deactivated and removed.",13,10,0
 	else
-infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.02  23.11.2000 ",27,'q',13,10
+infotext	dc.b	13,10,27,'p',"  Clocky¿ verze 3.02  24.11.2000 ",27,'q',13,10
 	dc.b	       "     (c) 1991-2000  Petr Stehl¡k",13,10,10,0
 unintext	dc.b	"Clocky byly vypnuty a odstranˆny.",13,10,0
 	endc
