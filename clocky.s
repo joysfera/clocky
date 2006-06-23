@@ -1996,7 +1996,7 @@ konec_video_testu
 	move.w	d0,sysver
 	cmp.w	#$0100,d0
 	bne.s	.ma_kbsh
-	move.l	#$1EB,kbshift
+	move.l	#$E1B,kbshift
 	bra.s	.za_kbsh
 .ma_kbsh	move.l	$24(A0),kbshift
 .za_kbsh	cmp.w	#$0400,d0		od kvˆtna 1992/TOSu 4.04 maj¡ TOSy nov‚ pointery pro kl vesnici
